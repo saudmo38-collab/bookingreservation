@@ -744,15 +744,51 @@ function stopVoice() {
   document.getElementById('voiceStatus').textContent = 'اضغط للتحدث';
 }
 
+function parseArabicDate(text) {
+  // Map Arabic month names to numbers
+  const monthMap = {
+    'يناير': '01', 'جانفي': '01',
+    'فبراير': '02', 'فيفري': '02',
+    'مارس': '03',
+    'أبريل': '04', 'ابريل': '04', 'أبريل': '04',
+    'مايو': '05', 'ماي': '05',
+    'يونيو': '06', 'جوان': '06',
+    'يوليو': '07', 'يوليه': '07',
+    'أغسطس': '08', 'اغسطس': '08',
+    'سبتمبر': '09',
+    'أكتوبر': '10', 'اكتوبر': '10',
+    'نوفمبر': '11',
+    'ديسمبر': '12', 'دجنبر': '12'
+  };
+
+  // Arabic-Eastern numerals to Western
+  const toWestern = s => s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+
+  const t = toWestern(text);
+  const year = new Date().getFullYear();
+
+  for (const [monthName, monthNum] of Object.entries(monthMap)) {
+    // Pattern: "12 يونيو" or "يونيو 12"
+    const re1 = new RegExp(`(\\d{1,2})\\s*${monthName}`);
+    const re2 = new RegExp(`${monthName}\\s*(\\d{1,2})`);
+    const m = t.match(re1) || t.match(re2);
+    if (m) {
+      const day = m[1].padStart(2, '0');
+      return `${year}-${monthNum}-${day}`;
+    }
+  }
+  return null;
+}
+
 function parseVoiceInput(text) {
   const t = text.toLowerCase();
 
-  // Extract name
-  const nameMatch = t.match(/اسم الضيف\s+([^\،,،]+)/);
+  // Extract name — يقبل "اسم الضيف ..." أو أول جملة قبل الفاصلة
+  const nameMatch = t.match(/اسم الضيف\s+([^،,\n]+)/) || t.match(/^([^،,\n]+)/);
   if (nameMatch) document.getElementById('f-name').value = nameMatch[1].trim();
 
   // Extract apartment
-  const aptMap = { 'مسته عشر|105': '105', 'مية وعشرة|110|١١٠': '110', 'مية وسبعة|207|٢٠٧': '207', 'مية وثلاثة|103|١٠٣': '103', 'ستة|m6|6': '6' };
+  const aptMap = { 'مية وخمسة|105': '105', 'مية وعشرة|110|١١٠': '110', 'مية وسبعة|207|٢٠٧': '207', 'مية وثلاثة|103|١٠٣': '103', 'ستة|m6': '6' };
   for (const [pattern, val] of Object.entries(aptMap)) {
     if (new RegExp(pattern).test(t)) {
       document.getElementById('f-apt').value = val;
@@ -763,9 +799,27 @@ function parseVoiceInput(text) {
     }
   }
 
+  // Extract checkin date — "وصول 12 يونيو" أو "من 12 يونيو"
+  const checkinText = t.match(/(?:وصول|وصل|من|تسجيل الوصول)\s+(.{5,20})/);
+  if (checkinText) {
+    const d = parseArabicDate(checkinText[1]);
+    if (d) document.getElementById('f-checkin').value = d;
+  } else {
+    // fallback: scan full text for any date
+    const d = parseArabicDate(t.split(/مغادر|خروج|إلى|الى/)[0]);
+    if (d) document.getElementById('f-checkin').value = d;
+  }
+
+  // Extract checkout date — "مغادرة 14 يونيو" أو "حتى 14 يونيو"
+  const checkoutText = t.match(/(?:مغادرة|مغادر|خروج|حتى|إلى|الى)\s+(.{5,20})/);
+  if (checkoutText) {
+    const d = parseArabicDate(checkoutText[1]);
+    if (d) document.getElementById('f-checkout').value = d;
+  }
+
   // Extract price
-  const priceMatch = t.match(/السعر\s+(\d+)/);
-  if (priceMatch) document.getElementById('f-price').value = priceMatch[1];
+  const priceMatch = t.match(/(?:السعر|سعر|بسعر)\s*([\d٠-٩]+)/);
+  if (priceMatch) document.getElementById('f-price').value = priceMatch[1].replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
 
   // Extract platform
   if (t.includes('بوكينج') || t.includes('booking')) {
