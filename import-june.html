@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>استيراد حجوزات يونيو</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #0d1117; color: #e6edf3; padding: 20px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px; max-width: 500px; margin: 40px auto; text-align: center; }
+  h2 { color: #e6a817; margin-bottom: 10px; }
+  p { color: #8b949e; font-size: 14px; margin-bottom: 20px; }
+  button { background: #e6a817; color: #000; border: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; }
+  button:hover { background: #f0c040; }
+  .result { margin-top: 16px; font-size: 14px; }
+  .success { color: #3fb950; }
+  .error { color: #f85149; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>📥 استيراد حجوزات يونيو 2026</h2>
+  <p>سيتم إضافة <strong>21 حجز</strong> من كل الشقق الخمس إلى تطبيق إدارة الحجوزات</p>
+  <button onclick="importBookings()">✅ استيراد الآن</button>
+  <div class="result" id="result"></div>
+</div>
+<script>
+const JUNE_BOOKINGS = [
+  {
+    "apt": "6",
+    "name": "WAJDI",
+    "checkin": "2026-06-01",
+    "checkout": "2026-06-30",
+    "price": 2967.95,
+    "nights": 29,
+    "phone": "503724776",
+    "platform": "A",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000000000
+  },
+  {
+    "apt": "103",
+    "name": "NAIF ALSHAMRI",
+    "checkin": "2026-06-04",
+    "checkout": "2026-06-05",
+    "price": 240,
+    "nights": 1,
+    "phone": "+966 50 192 6555",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000001000
+  },
+  {
+    "apt": "103",
+    "name": "ahmed adel al roujoula",
+    "checkin": "2026-06-05",
+    "checkout": "2026-06-09",
+    "price": 1200,
+    "nights": 4,
+    "phone": "971582187999",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000002000
+  },
+  {
+    "apt": "103",
+    "name": "NAWAF ALMUTAIRI",
+    "checkin": "2026-06-11",
+    "checkout": "2026-06-12",
+    "price": 242.27,
+    "nights": 1,
+    "phone": "539000941",
+    "platform": "G",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000003000
+  },
+  {
+    "apt": "103",
+    "name": "Faisal Alwehaibi",
+    "checkin": "2026-06-13",
+    "checkout": "2026-06-14",
+    "price": 234.9,
+    "nights": 1,
+    "phone": "+966 53 416 3306",
+    "platform": "B",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000004000
+  },
+  {
+    "apt": "103",
+    "name": "ahmed adel al roujoula",
+    "checkin": "2026-06-19",
+    "checkout": "2026-06-23",
+    "price": 1200,
+    "nights": 4,
+    "phone": "971582187999",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000005000
+  },
+  {
+    "apt": "105",
+    "name": "HANEEN IBRAHEM",
+    "checkin": "2026-06-01",
+    "checkout": "2026-06-02",
+    "price": 301,
+    "nights": 1,
+    "phone": "+966 53 487 5745",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000006000
+  },
+  {
+    "apt": "105",
+    "name": "HANEEN IBRAHEM",
+    "checkin": "2026-06-02",
+    "checkout": "2026-06-04",
+    "price": 500,
+    "nights": 2,
+    "phone": "+966 53 487 5745",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000007000
+  },
+  {
+    "apt": "105",
+    "name": "HANEEN IBRAHEM",
+    "checkin": "2026-06-04",
+    "checkout": "2026-06-07",
+    "price": 750,
+    "nights": 3,
+    "phone": "+966 53 487 5745",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000008000
+  },
+  {
+    "apt": "105",
+    "name": "HANEEN IBRAHEM",
+    "checkin": "2026-06-07",
+    "checkout": "2026-06-09",
+    "price": 500,
+    "nights": 2,
+    "phone": "+966 53 487 5745",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000009000
+  },
+  {
+    "apt": "105",
+    "name": "HANEEN IBRAHEM",
+    "checkin": "2026-06-09",
+    "checkout": "2026-06-14",
+    "price": 1250,
+    "nights": 5,
+    "phone": "+966 53 487 5745",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000010000
+  },
+  {
+    "apt": "105",
+    "name": "HANEEN IBRAHEM",
+    "checkin": "2026-06-14",
+    "checkout": "2026-06-18",
+    "price": 1000,
+    "nights": 4,
+    "phone": "+966 53 487 5745",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000011000
+  },
+  {
+    "apt": "110",
+    "name": "Yazan Alassaf",
+    "checkin": "2026-06-01",
+    "checkout": "2026-06-02",
+    "price": 178.2,
+    "nights": 1,
+    "phone": "+966 59 041 7257",
+    "platform": "B",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000012000
+  },
+  {
+    "apt": "110",
+    "name": "Elssa ALMUTAIRI",
+    "checkin": "2026-06-03",
+    "checkout": "2026-06-06",
+    "price": 600,
+    "nights": 3,
+    "phone": "+965 9946 4346",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000013000
+  },
+  {
+    "apt": "110",
+    "name": "HAMMED ALKHALDI",
+    "checkin": "2026-06-09",
+    "checkout": "2026-06-11",
+    "price": 388.8,
+    "nights": 2,
+    "phone": "+966 55 058 9200",
+    "platform": "B",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000014000
+  },
+  {
+    "apt": "110",
+    "name": "ALI ALJUAIDI",
+    "checkin": "2026-06-14",
+    "checkout": "2026-06-15",
+    "price": 240,
+    "nights": 1,
+    "phone": "553710482",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000015000
+  },
+  {
+    "apt": "207",
+    "name": "FROM ABO_WATEN",
+    "checkin": "2026-06-01",
+    "checkout": "2026-06-02",
+    "price": 267,
+    "nights": 1,
+    "phone": "",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000016000
+  },
+  {
+    "apt": "207",
+    "name": "NAIF ALSHAMRI",
+    "checkin": "2026-06-05",
+    "checkout": "2026-06-06",
+    "price": 250,
+    "nights": 1,
+    "phone": "+966 50 192 6555",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000017000
+  },
+  {
+    "apt": "207",
+    "name": "NASSER ALAOTAIBI",
+    "checkin": "2026-06-09",
+    "checkout": "2026-06-10",
+    "price": 216.76,
+    "nights": 1,
+    "phone": "561952976",
+    "platform": "G",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000018000
+  },
+  {
+    "apt": "207",
+    "name": "NOUF ALQAHTANI",
+    "checkin": "2026-06-12",
+    "checkout": "2026-06-13",
+    "price": 216.76,
+    "nights": 1,
+    "phone": "0549065957",
+    "platform": "G",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000019000
+  },
+  {
+    "apt": "207",
+    "name": "Aseel Alduweesh",
+    "checkin": "2026-06-14",
+    "checkout": "2026-06-15",
+    "price": 270,
+    "nights": 1,
+    "phone": "533080855",
+    "platform": "D",
+    "liquidity": "received",
+    "notes": "",
+    "month": 6,
+    "year": 2026,
+    "monthLabel": "يونيو 2026",
+    "id": 1700000020000
+  }
+];
+
+function importBookings() {
+  try {
+    // Get existing bookings
+    const existing = JSON.parse(localStorage.getItem('bookings') || '[]');
+    
+    // Remove any existing June 2026 bookings to avoid duplicates
+    const filtered = existing.filter(b => !(b.month === 6 && b.year === 2026));
+    
+    // Merge
+    const merged = [...filtered, ...JUNE_BOOKINGS];
+    localStorage.setItem('bookings', JSON.stringify(merged));
+    
+    document.getElementById('result').innerHTML = 
+      '<div class="success">✅ تم استيراد ' + JUNE_BOOKINGS.length + ' حجز بنجاح!<br>يمكنك الآن إغلاق هذه الصفحة والرجوع للتطبيق</div>';
+  } catch(e) {
+    document.getElementById('result').innerHTML = '<div class="error">❌ خطأ: ' + e.message + '</div>';
+  }
+}
+</script>
+</body>
+</html>
