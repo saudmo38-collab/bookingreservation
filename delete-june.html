@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حذف بيانات يونيو</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f9; color: #1a1f2e; padding: 20px; }
+  .card { background: #fff; border: 1px solid #dde1e7; border-radius: 12px; padding: 20px; max-width: 500px; margin: 40px auto; text-align: center; }
+  h2 { color: #dc2626; margin-bottom: 8px; }
+  p { color: #6b7280; font-size: 13px; margin-bottom: 20px; }
+  button { background: #dc2626; color: #fff; border: none; padding: 14px 30px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; }
+  button:hover { background: #b91c1c; }
+  .result { margin-top: 12px; font-size: 13px; padding: 10px; border-radius: 8px; }
+  .success { background: #dcfce7; color: #16a34a; }
+  .error { background: #fee2e2; color: #dc2626; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>🗑 حذف بيانات يونيو 2026</h2>
+  <p>سيتم حذف كل حجوزات ومصاريف يونيو 2026 نهائياً.<br>بيانات يوليو والأشهر الأخرى لن تُمس.</p>
+  <button onclick="deleteJune()">🗑 حذف يونيو الآن</button>
+  <div class="result" id="result"></div>
+</div>
+<script>
+function deleteJune() {
+  if (!confirm('هل أنت متأكد من حذف كل بيانات يونيو 2026؟')) return;
+  try {
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+
+    const newBookings = bookings.filter(b => !(b.month === 6 && b.year === 2026));
+    const newExpenses = expenses.filter(e => !(e.month === 6 && e.year === 2026));
+
+    const deletedB = bookings.length - newBookings.length;
+    const deletedE = expenses.length - newExpenses.length;
+
+    localStorage.setItem('bookings', JSON.stringify(newBookings));
+    localStorage.setItem('expenses', JSON.stringify(newExpenses));
+
+    document.getElementById('result').innerHTML =
+      `<div class="success">✅ تم الحذف بنجاح<br>حجوزات محذوفة: ${deletedB}<br>مصاريف محذوفة: ${deletedE}<br><br>أغلق هذه الصفحة وافتح التطبيق</div>`;
+  } catch(e) {
+    document.getElementById('result').innerHTML = '<div class="error">❌ خطأ: ' + e.message + '</div>';
+  }
+}
+</script>
+</body>
+</html>
