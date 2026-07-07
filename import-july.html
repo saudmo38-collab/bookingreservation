@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>استيراد يوليو 2026</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f9; color: #1a1f2e; padding: 20px; }
+  .card { background: #fff; border: 1px solid #dde1e7; border-radius: 12px; padding: 20px; max-width: 500px; margin: 20px auto; }
+  h2 { color: #c8860a; margin-bottom: 6px; font-size: 18px; }
+  .sub { color: #6b7280; font-size: 13px; margin-bottom: 16px; }
+  .summary { background: #f0f2f5; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; }
+  .summary-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #dde1e7; }
+  .summary-row:last-child { border: none; font-weight: 700; color: #c8860a; }
+  button { background: #c8860a; color: #fff; border: none; padding: 14px 30px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 8px; }
+  button:hover { background: #e6a817; }
+  .btn-danger { background: #dc2626; }
+  .result { margin-top: 12px; font-size: 13px; text-align: center; padding: 10px; border-radius: 8px; }
+  .success { background: #dcfce7; color: #16a34a; }
+  .error { background: #fee2e2; color: #dc2626; }
+  .warning { background: #fef9c3; color: #92400e; font-size: 12px; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>📥 استيراد يوليو 2026</h2>
+  <p class="sub">نقطة البداية المحاسبية — يوليو 2026</p>
+
+  <div class="warning">⚠️ هذا الملف يحذف أي بيانات يوليو موجودة ويستبدلها بالبيانات الجديدة. حجوزات يونيو والأشهر الأخرى لن تُمس.</div>
+
+  <div class="summary">
+    <div class="summary-row"><span>💰 رصيد افتتاحي (بنك)</span><span>14,011.56 ر</span></div>
+    <div class="summary-row"><span>🏦 محافظ بوكينج</span><span>10,680.75 ر</span></div>
+    <div class="summary-row"><span>✈️ محافظ إيربنب</span><span>434.47 ر</span></div>
+    <div class="summary-row"><span>📋 حجوزات يوليو</span><span>9 حجوزات</span></div>
+    <div class="summary-row"><span>💸 مصاريف يوليو (5 شقق)</span><span>45,600 ر</span></div>
+    <div class="summary-row"><span>📊 إجمالي إيرادات يوليو</span><span>8,649.51 ر</span></div>
+  </div>
+
+  <button onclick="importData()">✅ استيراد الآن</button>
+  <button class="btn-danger" onclick="clearJuly()">🗑 مسح بيانات يوليو فقط</button>
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+const JULY_BOOKINGS = [{"apt":"6","name":"Abdullah Kaabi","checkin":"2026-07-06","checkout":"2026-07-07","price":243,"nights":1,"phone":"+966546845516","platform":"B","liquidity":"wallet","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100000000},{"apt":"103","name":"ALSAEED AHMED","checkin":"2026-07-04","checkout":"2026-07-06","price":729,"nights":2,"phone":"502210006","platform":"B","liquidity":"wallet","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100001000},{"apt":"105","name":"HANEEN IBRAHEM","checkin":"2026-07-01","checkout":"2026-07-15","price":3500,"nights":14,"phone":"+966534875745","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100002000},{"apt":"110","name":"Dilara Gunbogan","checkin":"2026-07-01","checkout":"2026-07-28","price":2793.1,"nights":27,"phone":"+966598999991","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100003000},{"apt":"207","name":"Aseel Alduweesh","checkin":"2026-07-01","checkout":"2026-07-02","price":270,"nights":1,"phone":"533080855","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100004000},{"apt":"207","name":"MANSOUR","checkin":"2026-07-03","checkout":"2026-07-04","price":250,"nights":1,"phone":"599077787","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100005000},{"apt":"207","name":"NASSER ALQAHTANI","checkin":"2026-07-04","checkout":"2026-07-05","price":362,"nights":1,"phone":"507752570","platform":"B","liquidity":"wallet","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100006000},{"apt":"207","name":"AHMED","checkin":"2026-07-05","checkout":"2026-07-06","price":212.41,"nights":1,"phone":"508473144","platform":"A","liquidity":"wallet","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100007000},{"apt":"207","name":"Aseel Alduweesh","checkin":"2026-07-06","checkout":"2026-07-08","price":540,"nights":2,"phone":"533080855","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100008000}];
+
+const JULY_EXPENSES = [{"key":"2026-7-6","month":7,"apt":"6","year":2026,"monthLabel":"يوليو 2026","clean":450,"cleanMonths":1,"net":0,"elec":0,"misc":0,"comm":0,"maint":0,"rent":11750,"rentMonths":6,"other":[],"total":12200},{"key":"2026-7-103","month":7,"apt":"103","year":2026,"monthLabel":"يوليو 2026","clean":400,"cleanMonths":1,"net":0,"elec":0,"misc":0,"comm":0,"maint":0,"rent":15000,"rentMonths":6,"other":[],"total":15400},{"key":"2026-7-105","month":7,"apt":"105","year":2026,"monthLabel":"يوليو 2026","clean":450,"cleanMonths":1,"net":50,"elec":0,"misc":0,"comm":0,"maint":0,"rent":8250,"rentMonths":3,"other":[],"total":8750},{"key":"2026-7-110","month":7,"apt":"110","year":2026,"monthLabel":"يوليو 2026","clean":0,"cleanMonths":1,"net":0,"elec":0,"misc":0,"comm":0,"maint":0,"rent":6250,"rentMonths":3,"other":[],"total":6250},{"key":"2026-7-207","month":7,"apt":"207","year":2026,"monthLabel":"يوليو 2026","clean":500,"cleanMonths":1,"net":0,"elec":0,"misc":0,"comm":0,"maint":0,"rent":2500,"rentMonths":1,"other":[],"total":3000}];
+
+const OPENING_BALANCE = {
+  bank: 14011.56,
+  booking: 10680.75,
+  airbnb: 434.47,
+  date: "2026-07-01",
+  note: "رصيد افتتاحي يوليو 2026"
+};
+
+function importData() {
+  try {
+    // حجوزات — نحتفظ بغير يوليو 2026
+    const existing = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const filtered = existing.filter(b => !(b.month === 7 && b.year === 2026));
+    localStorage.setItem('bookings', JSON.stringify([...filtered, ...JULY_BOOKINGS]));
+
+    // مصاريف — نحتفظ بغير يوليو 2026
+    const existingExp = JSON.parse(localStorage.getItem('expenses') || '[]');
+    const filteredExp = existingExp.filter(e => !(e.month === 7 && e.year === 2026));
+    localStorage.setItem('expenses', JSON.stringify([...filteredExp, ...JULY_EXPENSES]));
+
+    // رصيد افتتاحي
+    localStorage.setItem('openingBalance', JSON.stringify(OPENING_BALANCE));
+
+    document.getElementById('result').innerHTML = '<div class="success">✅ تم الاستيراد بنجاح! 9 حجوزات + 5 مصاريف + رصيد افتتاحي<br>أغلق هذه الصفحة وافتح التطبيق</div>';
+  } catch(e) {
+    document.getElementById('result').innerHTML = '<div class="error">❌ خطأ: ' + e.message + '</div>';
+  }
+}
+
+function clearJuly() {
+  if (!confirm('هل أنت متأكد من مسح بيانات يوليو فقط؟')) return;
+  try {
+    const b = JSON.parse(localStorage.getItem('bookings') || '[]').filter(x => !(x.month===7 && x.year===2026));
+    const e = JSON.parse(localStorage.getItem('expenses') || '[]').filter(x => !(x.month===7 && x.year===2026));
+    localStorage.setItem('bookings', JSON.stringify(b));
+    localStorage.setItem('expenses', JSON.stringify(e));
+    localStorage.removeItem('openingBalance');
+    document.getElementById('result').innerHTML = '<div class="success">✅ تم مسح بيانات يوليو</div>';
+  } catch(e) {
+    document.getElementById('result').innerHTML = '<div class="error">❌ خطأ: ' + e.message + '</div>';
+  }
+}
+</script>
+</body>
+</html>
