@@ -694,11 +694,46 @@
     </div>
   </div>
 
+  <div style="margin-bottom:10px;">
+    <button class="btn btn-secondary btn-full" onclick="exportExpensesOnly()">⬇ تصدير المصاريف (إكسل)</button>
+  </div>
+
   <div id="expenses-list"></div>
 </div>
 
 <!-- ===== TAB: STATS ===== -->
 <div class="page" id="page-stats">
+  <div class="card" style="margin-bottom:12px;">
+    <div class="card-title">🔍 فلتر التقارير</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>الشهر</label>
+        <select id="stats-month">
+          <option value="">كل الأشهر</option>
+          <option value="1">يناير</option><option value="2">فبراير</option>
+          <option value="3">مارس</option><option value="4">أبريل</option>
+          <option value="5">مايو</option><option value="6">يونيو</option>
+          <option value="7" selected>يوليو</option><option value="8">أغسطس</option>
+          <option value="9">سبتمبر</option><option value="10">أكتوبر</option>
+          <option value="11">نوفمبر</option><option value="12">ديسمبر</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>السنة</label>
+        <select id="stats-year">
+          <option value="">كل السنوات</option>
+          <option value="2023">2023</option>
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026" selected>2026</option>
+        </select>
+      </div>
+    </div>
+    <div class="action-row" style="margin-top:10px;">
+      <button class="btn btn-primary" style="flex:1" onclick="renderStats()">عرض</button>
+      <button class="btn btn-secondary" onclick="clearStatsFilter()">كل الأشهر</button>
+    </div>
+  </div>
   <div class="stats-grid" id="stats-cards"></div>
   <div id="apt-stats"></div>
 </div>
@@ -1223,6 +1258,28 @@ function addToAccrued(map, year, month, amount) {
   const key = `${year}-${month}`;
   map[key] = (map[key] || 0) + amount;
 }
+
+// نسخة مفلترة — تأخذ قائمة مصاريف مفلترة مسبقاً
+function getAccruedExpensesForAptFiltered(apt, filteredExp) {
+  const accruedMap = {};
+  filteredExp.filter(e => e.apt === apt).forEach(e => {
+    const fixedAmount = (e.net||0)+(e.elec||0)+(e.misc||0)+(e.comm||0)+(e.maint||0)+(e.other||[]).reduce((s,o)=>s+(o.amount||0),0);
+    addToAccrued(accruedMap, e.year, e.month, fixedAmount);
+    const rentMonths = e.rentMonths || 1;
+    const rentShare = (e.rent||0) / rentMonths;
+    for (let i = 0; i < rentMonths; i++) {
+      const {y, m} = addMonths(e.year, e.month, i);
+      addToAccrued(accruedMap, y, m, rentShare);
+    }
+    const cleanMonths = e.cleanMonths || 1;
+    const cleanShare = (e.clean||0) / cleanMonths;
+    for (let i = 0; i < cleanMonths; i++) {
+      const {y, m} = addMonths(e.year, e.month, i);
+      addToAccrued(accruedMap, y, m, cleanShare);
+    }
+  });
+  return accruedMap;
+}
 function addMonths(year, month, offset) {
   const total = (month - 1) + offset;
   return { y: year + Math.floor(total / 12), m: (total % 12) + 1 };
@@ -1231,39 +1288,86 @@ function sumAccrued(accruedMap) {
   return Object.values(accruedMap).reduce((s, v) => s + v, 0);
 }
 
+function clearStatsFilter() {
+  document.getElementById('stats-month').value = '';
+  document.getElementById('stats-year').value = '';
+  renderStats();
+}
+
 function renderStats() {
   const apts = ['6','103','105','110','207'];
+  const selMonth = parseInt(document.getElementById('stats-month').value) || null;
+  const selYear = parseInt(document.getElementById('stats-year').value) || null;
 
-  const totalRevenue = bookings.reduce((s, b) => s + b.price, 0);
-  const totalCashExpenses = expenses.reduce((s, e) => s + e.total, 0);
-  const cashProfit = totalRevenue - totalCashExpenses;
+  // فلترة الحجوزات والمصاريف
+  const filteredBookings = bookings.filter(b =>
+    (!selMonth || b.month === selMonth) &&
+    (!selYear || b.year === selYear)
+  );
+  const filteredExpenses = expenses.filter(e =>
+    (!selMonth || e.month === selMonth) &&
+    (!selYear || e.year === selYear)
+  );
 
+  // الرصيد الافتتاحي (يُضاف فقط لو الفلتر على يوليو 2026 أو كل الأشهر)
+  const ob = JSON.parse(localStorage.getItem('openingBalance') || 'null');
+  const isJuly2026 = (selMonth === 7 && selYear === 2026) || (!selMonth && !selYear);
+  const obTotal = ob && isJuly2026 ? (ob.bank + ob.booking + ob.airbnb) : 0;
+
+  const totalRevenue = filteredBookings.reduce((s, b) => s + b.price, 0);
+  const totalCashExpenses = filteredExpenses.reduce((s, e) => s + e.total, 0);
+  const inWallet = filteredBookings.filter(b => b.platform === 'B' && b.liquidity === 'wallet').reduce((s, b) => s + b.price, 0);
+  const inWalletAirbnb = filteredBookings.filter(b => b.platform === 'A' && b.liquidity === 'wallet').reduce((s, b) => s + b.price, 0);
+  const receivedRevenue = filteredBookings.filter(b => b.liquidity === 'received').reduce((s, b) => s + b.price, 0);
+
+  // السيولة الفعلية = رصيد افتتاحي + إيرادات مستلمة - مصاريف فعلية
+  const cashLiquidity = obTotal + receivedRevenue - totalCashExpenses;
+
+  // الربح المُسوّى
   let totalAccruedExpenses = 0;
-  apts.forEach(apt => { totalAccruedExpenses += sumAccrued(getAccruedExpensesForApt(apt)); });
+  apts.forEach(apt => {
+    const aptExpFiltered = filteredExpenses.filter(e => e.apt === apt);
+    const tempExpenses = expenses;
+    // نحسب الـ accrual فقط على المصاريف المفلترة
+    const accruedMap = getAccruedExpensesForAptFiltered(apt, filteredExpenses);
+    totalAccruedExpenses += sumAccrued(accruedMap);
+  });
   const accrualProfit = totalRevenue - totalAccruedExpenses;
 
-  const inWallet = bookings.filter(b => b.platform === 'B' && b.liquidity === 'wallet').reduce((s, b) => s + b.price, 0);
+  const periodLabel = selMonth && selYear ? `${MONTHS_AR[selMonth-1]} ${selYear}` : selYear ? `${selYear}` : 'كل الفترات';
 
   document.getElementById('stats-cards').innerHTML = `
+    ${ob && isJuly2026 ? `
+    <div class="stat-card" style="grid-column:1/-1;border:1px solid var(--green);">
+      <div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:6px;">🏦 الرصيد الافتتاحي — ${ob.date}</div>
+      <div style="display:flex;justify-content:space-around;font-size:12px;color:var(--text2);">
+        <div style="text-align:center"><b style="color:var(--text);font-size:14px;">${ob.bank.toLocaleString()}</b><br>بنك</div>
+        <div style="text-align:center"><b style="color:var(--text);font-size:14px;">${ob.booking.toLocaleString()}</b><br>بوكينج</div>
+        <div style="text-align:center"><b style="color:var(--text);font-size:14px;">${ob.airbnb.toLocaleString()}</b><br>إيربنب</div>
+        <div style="text-align:center"><b style="color:var(--accent);font-size:14px;">${obTotal.toLocaleString()}</b><br>الإجمالي</div>
+      </div>
+    </div>` : ''}
     <div class="stat-card">
       <div class="stat-value">${totalRevenue.toLocaleString()}</div>
-      <div class="stat-label">إجمالي الإيرادات (ر)</div>
+      <div class="stat-label">إيرادات ${periodLabel} (ر)</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value" style="color:var(--accent)">${inWallet.toLocaleString()}</div>
-      <div class="stat-label">في محفظة بوكينج (ر)</div>
+      <div class="stat-value" style="color:var(--accent)">${(inWallet + inWalletAirbnb).toLocaleString()}</div>
+      <div class="stat-label">في المحافظ (ر)</div>
     </div>
     <div class="stat-card" style="grid-column:1/-1;background:var(--surface);border:1px solid var(--blue);">
       <div style="font-size:12px;color:var(--blue);font-weight:700;margin-bottom:8px;">💧 السيولة الفعلية (Cash Flow)</div>
-      <div style="display:flex;justify-content:space-around;">
-        <div><div class="stat-value" style="font-size:18px;color:var(--red)">${totalCashExpenses.toLocaleString()}</div><div class="stat-label">مصاريف فعلية خرجت</div></div>
-        <div><div class="stat-value" style="font-size:18px;color:${cashProfit>=0?'var(--green)':'var(--red)'}">${cashProfit.toLocaleString()}</div><div class="stat-label">صافي السيولة</div></div>
+      <div style="display:flex;justify-content:space-around;flex-wrap:wrap;gap:8px;">
+        ${ob && isJuly2026 ? `<div style="text-align:center"><div style="font-size:16px;font-weight:800;color:var(--green)">${obTotal.toLocaleString()}</div><div style="font-size:11px;color:var(--text2)">رصيد افتتاحي</div></div>` : ''}
+        <div style="text-align:center"><div style="font-size:16px;font-weight:800;color:var(--green)">${receivedRevenue.toLocaleString()}</div><div style="font-size:11px;color:var(--text2)">إيرادات مستلمة</div></div>
+        <div style="text-align:center"><div style="font-size:16px;font-weight:800;color:var(--red)">${totalCashExpenses.toLocaleString()}</div><div style="font-size:11px;color:var(--text2)">مصاريف خرجت</div></div>
+        <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:${cashLiquidity>=0?'var(--green)':'var(--red)'}">${cashLiquidity.toLocaleString()}</div><div style="font-size:11px;color:var(--text2)">صافي السيولة</div></div>
       </div>
     </div>
     <div class="stat-card" style="grid-column:1/-1;background:var(--surface);border:1px solid var(--accent);">
       <div style="font-size:12px;color:var(--accent);font-weight:700;margin-bottom:8px;">📊 الربح المحاسبي المُسوّى (Accrual)</div>
       <div style="display:flex;justify-content:space-around;">
-        <div><div class="stat-value" style="font-size:18px;color:var(--red)">${totalAccruedExpenses.toLocaleString()}</div><div class="stat-label">نصيب الشهور الفعلي</div></div>
+        <div><div class="stat-value" style="font-size:18px;color:var(--red)">${totalAccruedExpenses.toLocaleString()}</div><div class="stat-label">نصيب الفترة من المصاريف</div></div>
         <div><div class="stat-value" style="font-size:18px;color:${accrualProfit>=0?'var(--green)':'var(--red)'}">${accrualProfit.toLocaleString()}</div><div class="stat-label">صافي الربح الحقيقي</div></div>
       </div>
     </div>`;
@@ -1271,15 +1375,15 @@ function renderStats() {
   // Per apartment
   let html = '';
   apts.forEach(apt => {
-    const aptBookings = bookings.filter(b => b.apt === apt);
+    const aptBookings = filteredBookings.filter(b => b.apt === apt);
     if (!aptBookings.length) return;
     const rev = aptBookings.reduce((s, b) => s + b.price, 0);
-    const cashExp = expenses.filter(e => e.apt === apt).reduce((s, e) => s + e.total, 0);
-    const accruedMap = getAccruedExpensesForApt(apt);
+    const cashExp = filteredExpenses.filter(e => e.apt === apt).reduce((s, e) => s + e.total, 0);
+    const accruedMap = getAccruedExpensesForAptFiltered(apt, filteredExpenses);
     const accruedExp = sumAccrued(accruedMap);
     const cashProfitApt = rev - cashExp;
     const accrualProfitApt = rev - accruedExp;
-    const walletAmt = aptBookings.filter(b => b.platform === 'B' && b.liquidity === 'wallet').reduce((s, b) => s + b.price, 0);
+    const walletAmt = aptBookings.filter(b => (b.platform === 'B' || b.platform === 'A') && b.liquidity === 'wallet').reduce((s, b) => s + b.price, 0);
     html += `
       <div class="card">
         <div class="card-title">🏠 شقة ${APT_NAMES[apt]}</div>
@@ -1300,31 +1404,76 @@ function renderStats() {
 }
 
 // ============ EXPORT ============
-function exportExcel() {
-  if (!bookings.length) { showToast('لا توجد بيانات للتصدير', true); return; }
+function exportExpensesOnly() {
+  if (!expenses.length) { showToast('لا توجد مصاريف للتصدير', true); return; }
 
-  let csv = '\uFEFF'; // BOM for Arabic
-  csv += 'رقم الحجز,اسم الضيف,الشقة,تاريخ الوصول,تاريخ المغادرة,عدد الليالي,السعر,المنصة,حالة المبلغ,رقم الهاتف,الشهر,ملاحظات\n';
-  bookings.forEach((b, i) => {
-    const liqLabel = b.platform === 'B' ? (b.liquidity === 'received' ? 'استُلم' : 'محفظة بوكينج') : 'استُلم';
-    csv += `${i+1},"${b.name}",${APT_NAMES[b.apt]},${b.checkin},${b.checkout},${b.nights},${b.price},${PLATFORM_NAMES[b.platform]},${liqLabel},"${b.phone}","${b.monthLabel}","${b.notes}"\n`;
+  let csv = '\uFEFF';
+  csv += 'الشقة,الشهر,نظافة,شهور تغطية النظافة,إنترنت,كهرباء,نثريات,عمولة,صيانة,إيجار,شهور تغطية الإيجار,مصاريف أخرى (وصف:مبلغ),الإجمالي\n';
+  expenses.forEach(e => {
+    const otherStr = (e.other || []).filter(o=>o.amount||o.desc).map(o => `${o.desc||'بدون وصف'}:${o.amount}`).join(' | ');
+    csv += `${APT_NAMES[e.apt]},"${e.monthLabel}",${e.clean||0},${e.cleanMonths||1},${e.net||0},${e.elec||0},${e.misc||0},${e.comm||0},${e.maint||0},${e.rent||0},${e.rentMonths||1},"${otherStr}",${e.total||0}\n`;
   });
 
-  if (expenses.length) {
-    csv += '\n\nالمصاريف\n';
-    csv += 'الشقة,الشهر,نظافة,إنترنت,كهرباء,نثريات,عمولة,صيانة,إيجار,الإجمالي\n';
-    expenses.forEach(e => {
-      csv += `${APT_NAMES[e.apt]},"${e.monthLabel}",${e.clean},${e.net},${e.elec},${e.misc},${e.comm},${e.maint},${e.rent},${e.total}\n`;
+  downloadCSV(csv, `مصاريف_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportExcel() {
+  if (!bookings.length && !expenses.length) { showToast('لا توجد بيانات للتصدير', true); return; }
+
+  let csv = '\uFEFF'; // BOM for Arabic
+
+  if (bookings.length) {
+    csv += 'الحجوزات\n';
+    csv += 'رقم الحجز,اسم الضيف,الشقة,تاريخ الوصول,تاريخ المغادرة,عدد الليالي,السعر,المنصة,حالة المبلغ,رقم الهاتف,الشهر,ملاحظات\n';
+    bookings.forEach((b, i) => {
+      const liqLabel = b.platform === 'B' ? (b.liquidity === 'received' ? 'استُلم' : 'محفظة بوكينج') : 'استُلم';
+      csv += `${i+1},"${b.name}",${APT_NAMES[b.apt]},${b.checkin},${b.checkout},${b.nights},${b.price},${PLATFORM_NAMES[b.platform]},${liqLabel},"${(b.phone||'').replace(/"/g,'')}","${b.monthLabel}","${(b.notes||'').replace(/"/g,'')}"\n`;
     });
   }
 
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  if (expenses.length) {
+    csv += '\n\nالمصاريف\n';
+    csv += 'الشقة,الشهر,نظافة,شهور تغطية النظافة,إنترنت,كهرباء,نثريات,عمولة,صيانة,إيجار,شهور تغطية الإيجار,مصاريف أخرى (وصف:مبلغ),الإجمالي\n';
+    expenses.forEach(e => {
+      const otherStr = (e.other || []).filter(o=>o.amount||o.desc).map(o => `${o.desc||'بدون وصف'}:${o.amount}`).join(' | ');
+      csv += `${APT_NAMES[e.apt]},"${e.monthLabel}",${e.clean||0},${e.cleanMonths||1},${e.net||0},${e.elec||0},${e.misc||0},${e.comm||0},${e.maint||0},${e.rent||0},${e.rentMonths||1},"${otherStr}",${e.total||0}\n`;
+    });
+  }
+
+  downloadCSV(csv, `حجوزات_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function downloadCSV(csvContent, filename) {
+  try {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // iOS Safari: navigator.share أو فتح نافذة جديدة كحل بديل عن التحميل المباشر
+    if (navigator.share && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      const file = new File([blob], filename, { type: 'text/csv' });
+      navigator.share({ files: [file], title: filename })
+        .then(() => showToast('✅ تم التصدير'))
+        .catch(() => fallbackDownload(blob, filename));
+      return;
+    }
+    fallbackDownload(blob, filename);
+  } catch (err) {
+    showToast('❌ حدث خطأ في التصدير', true);
+  }
+}
+
+function fallbackDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `حجوزات_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
   a.click();
-  showToast('✅ تم التصدير');
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 200);
+  showToast('✅ تم التصدير — تحقق من مجلد التنزيلات');
 }
 
 // ============ UTILS ============
