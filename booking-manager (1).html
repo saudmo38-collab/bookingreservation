@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إدارة الحجوزات</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface2: #f0f2f5;
+    --border: #dde1e7;
+    --accent: #c8860a;
+    --accent2: #e6a817;
+    --text: #1a1f2e;
+    --text2: #6b7280;
+    --green: #16a34a;
+    --red: #dc2626;
+    --blue: #2563eb;
+    --booking: #003580;
+    --gathern: #16a34a;
+    --airbnb: #ff5a5f;
+    --direct: #6b7280;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .header-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    font-family: 'Tajawal', sans-serif;
+    background: none;
+    border-top: none;
+    border-right: none;
+    border-left: none;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* Pages */
+  .page { display: none; padding: 16px; max-width: 800px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Voice Button */
+  .voice-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    background: var(--surface2);
+    border-radius: 12px;
+    border: 1px dashed var(--border);
+    margin-bottom: 16px;
+  }
+  .voice-btn {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .voice-btn:hover { transform: scale(1.05); }
+  .voice-btn.listening {
+    background: var(--accent);
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(230,168,23,0.4); }
+    50% { box-shadow: 0 0 0 14px rgba(230,168,23,0); }
+  }
+  .voice-status { font-size: 13px; color: var(--text2); text-align: center; }
+  .voice-transcript {
+    font-size: 13px;
+    color: var(--text);
+    text-align: center;
+    min-height: 20px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border-radius: 8px;
+    width: 100%;
+    display: none;
+  }
+
+  /* Form */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .form-group.full { grid-column: 1 / -1; }
+  label {
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 600;
+  }
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  select option { background: var(--surface2); }
+
+  /* Platform badges */
+  .platform-select { display: flex; gap: 8px; flex-wrap: wrap; }
+  .platform-btn {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Tajawal', sans-serif;
+    background: var(--surface2);
+    color: var(--text2);
+    transition: all 0.2s;
+  }
+  .platform-btn.selected-B { background: var(--booking); color: #fff; border-color: var(--booking); }
+  .platform-btn.selected-G { background: var(--gathern); color: #fff; border-color: var(--gathern); }
+  .platform-btn.selected-A { background: var(--airbnb); color: #fff; border-color: var(--airbnb); }
+  .platform-btn.selected-D { background: #555; color: #fff; border-color: #555; }
+
+  /* Liquidity radio */
+  .liquidity-btns { display: flex; gap: 8px; }
+  .liq-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Tajawal', sans-serif;
+    background: var(--surface2);
+    color: var(--text2);
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .liq-btn.selected-received { background: rgba(63,185,80,0.2); color: var(--green); border-color: var(--green); }
+  .liq-btn.selected-wallet { background: rgba(230,168,23,0.2); color: var(--accent); border-color: var(--accent); }
+
+  /* Expenses */
+  .expenses-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .other-expense-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+  .other-expense-row input { padding: 8px 10px; font-size: 13px; }
+  .other-expense-remove {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--red);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  @media (max-width: 600px) {
+    .other-expense-row { grid-template-columns: 1fr 1fr; }
+    .other-expense-row .other-expense-remove { grid-column: 1 / -1; width: 100%; }
+  }
+  .expense-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .expense-item label { font-size: 11px; color: var(--text2); }
+  .expense-item input { padding: 7px 10px; font-size: 13px; }
+
+  /* Buttons */
+  .btn {
+    padding: 11px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid var(--red); }
+  .btn-success { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid var(--green); }
+  .btn-full { width: 100%; justify-content: center; }
+
+  .action-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  /* Bookings list */
+  .booking-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .booking-name { font-size: 14px; font-weight: 700; color: var(--text); }
+  .booking-apt { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .booking-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+  .badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .badge-B { background: var(--booking); color: #fff; }
+  .badge-G { background: var(--gathern); color: #fff; }
+  .badge-A { background: var(--airbnb); color: #fff; }
+  .badge-D { background: #444; color: #ccc; }
+  .badge-received { background: rgba(63,185,80,0.2); color: var(--green); }
+  .badge-wallet { background: rgba(230,168,23,0.2); color: var(--accent); }
+  .booking-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .booking-detail { color: var(--text2); }
+  .booking-detail span { color: var(--text); font-weight: 600; display: block; }
+  .booking-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 11px;
+    border-radius: 6px;
+  }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+    direction: ltr;
+  }
+  .stat-label { font-size: 11px; color: var(--text2); margin-top: 3px; }
+
+  /* Filter */
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .filter-row select, .filter-row input {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  /* Month section in list */
+  .month-divider {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    padding: 6px 0;
+    margin: 10px 0 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text2);
+  }
+  .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+  .empty-state p { font-size: 14px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--green);
+    color: #000;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 13px;
+    transition: transform 0.3s;
+    z-index: 999;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--red); color: #fff; }
+
+  /* Expenses page */
+  .expense-form-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .expense-form-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Export page */
+  .export-month-select {
+    margin-bottom: 14px;
+  }
+  .preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    overflow-x: auto;
+    display: block;
+  }
+  .preview-table th {
+    background: var(--surface2);
+    padding: 6px 8px;
+    text-align: right;
+    color: var(--text2);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .preview-table td {
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    color: var(--text);
+  }
+
+  /* Bottom nav for mobile feel */
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .expenses-grid { grid-template-columns: 1fr; }
+    .booking-details { grid-template-columns: 1fr 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .section-sep {
+    height: 1px;
+    background: var(--border);
+    margin: 14px 0;
+  }
+
+  .highlight-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 13px;
+  }
+  .highlight-row .hl-label { color: var(--text2); }
+  .highlight-row .hl-value { font-weight: 700; color: var(--text); direction: ltr; }
+  .highlight-row .hl-value.positive { color: var(--green); }
+  .highlight-row .hl-value.negative { color: var(--red); }
+  .highlight-row .hl-value.accent { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">🏠 إدارة الحجوزات</div>
+    <div class="header-sub">٥ شقق · بوكينج · قاذران · إيربنب</div>
+  </div>
+  <button class="btn btn-secondary" onclick="exportExcel()" style="padding:7px 12px;font-size:12px;">⬇ تصدير</button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('add')">➕ حجز جديد</button>
+  <button class="tab" onclick="switchTab('list')">📋 الحجوزات</button>
+  <button class="tab" onclick="switchTab('expenses')">💸 المصاريف</button>
+  <button class="tab" onclick="switchTab('stats')">📊 التقارير</button>
+</div>
+
+<!-- ===== TAB: ADD BOOKING ===== -->
+<div class="page active" id="page-add">
+
+  <div class="card">
+    <div class="card-title">🎙 إدخال صوتي</div>
+    <div class="voice-section">
+      <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎙</button>
+      <div class="voice-status" id="voiceStatus">اضغط للتحدث</div>
+      <div class="voice-transcript" id="voiceTranscript"></div>
+    </div>
+    <div style="font-size:11px;color:var(--text2);text-align:center;">
+      مثال: <em>"اسم الضيف محمد العتيبي، شقة 110، وصول 10 يونيو، مغادرة 12 يونيو، السعر 450، بوكينج"</em>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📝 بيانات الحجز</div>
+
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>اسم الضيف</label>
+        <input type="text" id="f-name" placeholder="اسم الضيف" autocomplete="off" list="guest-names-list" oninput="updateNameSuggestions()">
+        <datalist id="guest-names-list"></datalist>
+      </div>
+
+      <div class="form-group full">
+        <label>الشقة</label>
+        <div class="platform-select" id="apt-select">
+          <button class="platform-btn" onclick="selectApt(this,'6')" data-val="6">M6</button>
+          <button class="platform-btn" onclick="selectApt(this,'103')" data-val="103">103</button>
+          <button class="platform-btn" onclick="selectApt(this,'105')" data-val="105">105</button>
+          <button class="platform-btn" onclick="selectApt(this,'110')" data-val="110">110</button>
+          <button class="platform-btn" onclick="selectApt(this,'207')" data-val="207">207</button>
+        </div>
+        <input type="hidden" id="f-apt">
+      </div>
+
+      <div class="form-group">
+        <label>تاريخ الوصول</label>
+        <input type="date" id="f-checkin">
+      </div>
+      <div class="form-group">
+        <label>تاريخ المغادرة</label>
+        <input type="date" id="f-checkout">
+      </div>
+
+      <div class="form-group">
+        <label>السعر الإجمالي (ريال)</label>
+        <input type="number" id="f-price" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>رقم الهاتف</label>
+        <input type="tel" id="f-phone" placeholder="+966...">
+      </div>
+
+      <div class="form-group full">
+        <label>المنصة</label>
+        <div class="platform-select" id="platform-select">
+          <button class="platform-btn" onclick="selectPlatform(this,'B')" data-val="B">بوكينج</button>
+          <button class="platform-btn" onclick="selectPlatform(this,'G')" data-val="G">قاذران</button>
+          <button class="platform-btn" onclick="selectPlatform(this,'A')" data-val="A">إيربنب</button>
+          <button class="platform-btn" onclick="selectPlatform(this,'D')" data-val="D">مباشر</button>
+        </div>
+        <input type="hidden" id="f-platform">
+      </div>
+
+      <div class="form-group full" id="liquidity-row">
+        <label>حالة المبلغ</label>
+        <div class="liquidity-btns">
+          <button class="liq-btn" onclick="selectLiquidity(this,'received')">✅ استُلم في الحساب</button>
+          <button class="liq-btn" onclick="selectLiquidity(this,'wallet')" id="liq-wallet-btn">⏳ في المحفظة</button>
+        </div>
+        <input type="hidden" id="f-liquidity" value="received">
+      </div>
+
+      <div class="form-group full">
+        <label>ملاحظات</label>
+        <input type="text" id="f-notes" placeholder="أي ملاحظات إضافية...">
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-primary" style="flex:1" onclick="saveBooking()">💾 حفظ الحجز</button>
+      <button class="btn btn-secondary" onclick="clearForm()">🗑 مسح</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB: LIST ===== -->
+<div class="page" id="page-list">
+  <div class="filter-row">
+    <select id="filter-apt" onchange="renderList()">
+      <option value="">كل الشقق</option>
+      <option value="6">M6</option>
+      <option value="103">103</option>
+      <option value="105">105</option>
+      <option value="110">110</option>
+      <option value="207">207</option>
+    </select>
+    <select id="filter-month" onchange="renderList()">
+      <option value="">كل الأشهر</option>
+    </select>
+    <select id="filter-platform" onchange="renderList()">
+      <option value="">كل المنصات</option>
+      <option value="B">بوكينج</option>
+      <option value="G">قاذران</option>
+      <option value="A">إيربنب</option>
+      <option value="D">مباشر</option>
+    </select>
+  </div>
+  <div id="booking-list"></div>
+</div>
+
+<!-- ===== TAB: EXPENSES ===== -->
+<div class="page" id="page-expenses">
+  <div class="card">
+    <div class="card-title">💸 إدخال المصاريف الشهرية</div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>الشهر</label>
+        <select id="exp-month">
+          <option value="1">يناير</option><option value="2">فبراير</option>
+          <option value="3">مارس</option><option value="4">أبريل</option>
+          <option value="5">مايو</option><option value="6">يونيو</option>
+          <option value="7">يوليو</option><option value="8">أغسطس</option>
+          <option value="9">سبتمبر</option><option value="10">أكتوبر</option>
+          <option value="11">نوفمبر</option><option value="12">ديسمبر</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>الشقة</label>
+        <select id="exp-apt">
+          <option value="6">M6</option>
+          <option value="103">103</option>
+          <option value="105">105</option>
+          <option value="110">110</option>
+          <option value="207">207</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="expenses-grid">
+      <div class="expense-item"><label>🌐 إنترنت</label><input type="number" id="exp-net" placeholder="0"></div>
+      <div class="expense-item"><label>⚡ كهرباء</label><input type="number" id="exp-elec" placeholder="0"></div>
+      <div class="expense-item"><label>📦 نثريات</label><input type="number" id="exp-misc" placeholder="0"></div>
+      <div class="expense-item"><label>📱 عمولة بوكينج</label><input type="number" id="exp-comm" placeholder="0"></div>
+      <div class="expense-item"><label>🔧 صيانة</label><input type="number" id="exp-maint" placeholder="0"></div>
+    </div>
+
+    <div class="section-sep"></div>
+
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">💵 مصاريف قد تُدفع مقدماً (إيجار / نظافة)</div>
+
+    <div class="expense-form-card" style="margin-bottom:10px;">
+      <div class="expense-form-title"><span>🏠 الإيجار</span></div>
+      <div class="expenses-grid">
+        <div class="expense-item"><label>المبلغ المدفوع فعلياً</label><input type="number" id="exp-rent" placeholder="0"></div>
+        <div class="expense-item"><label>عدد الشهور المغطاة</label><input type="number" id="exp-rent-months" placeholder="1" min="1" value="1"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:6px;">مثال: دفعت 18000 ريال تغطي 6 شهور → يُحسب 18000 من السيولة هذا الشهر، و3000 شهرياً في الربح المُسوّى</div>
+    </div>
+
+    <div class="expense-form-card" style="margin-bottom:10px;">
+      <div class="expense-form-title"><span>🧹 النظافة</span></div>
+      <div class="expenses-grid">
+        <div class="expense-item"><label>المبلغ المدفوع فعلياً</label><input type="number" id="exp-clean" placeholder="0"></div>
+        <div class="expense-item"><label>عدد الشهور المغطاة</label><input type="number" id="exp-clean-months" placeholder="1" min="1" value="1"></div>
+      </div>
+    </div>
+
+    <div class="section-sep"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <label style="font-size:13px;font-weight:700;color:var(--text);">⚠️ مصاريف أخرى</label>
+      <button class="btn btn-secondary btn-sm" onclick="addOtherExpenseRow()">➕ إضافة بند</button>
+    </div>
+    <div id="other-expenses-container"></div>
+
+    <div class="section-sep"></div>
+
+    <div class="expense-item" style="max-width:240px;">
+      <label>📊 إجمالي المصاريف (السيولة الفعلية لهذا الشهر)</label>
+      <input type="number" id="exp-total" placeholder="0" style="background:var(--surface2);color:var(--accent);font-weight:700;font-size:16px;" readonly>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-primary btn-full" onclick="saveExpenses()">💾 حفظ المصاريف</button>
+    </div>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <button class="btn btn-secondary btn-full" onclick="exportExpensesOnly()">⬇ تصدير المصاريف (إكسل)</button>
+  </div>
+
+  <div id="expenses-list"></div>
+</div>
+
+<!-- ===== TAB: STATS ===== -->
+<div class="page" id="page-stats">
+
+  <!-- فلتر -->
+  <div class="card" style="margin-bottom:12px;">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <select id="stats-month" style="flex:1;min-width:100px;">
+        <option value="">كل الأشهر</option>
+        <option value="1">يناير</option><option value="2">فبراير</option>
+        <option value="3">مارس</option><option value="4">أبريل</option>
+        <option value="5">مايو</option><option value="6">يونيو</option>
+        <option value="7" selected>يوليو</option><option value="8">أغسطس</option>
+        <option value="9">سبتمبر</option><option value="10">أكتوبر</option>
+        <option value="11">نوفمبر</option><option value="12">ديسمبر</option>
+      </select>
+      <select id="stats-year" style="flex:1;min-width:80px;">
+        <option value="">كل السنوات</option>
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026" selected>2026</option>
+      </select>
+      <button class="btn btn-primary" onclick="renderStats()" style="padding:9px 16px;">عرض</button>
+      <button class="btn btn-secondary" onclick="clearStatsFilter()" style="padding:9px 12px;">كل</button>
+      <button class="btn btn-secondary" onclick="toggleStatsMode()" id="stats-mode-btn" style="padding:9px 12px;font-size:11px;">تفصيلي</button>
+    </div>
+  </div>
+
+  <!-- السيولة -->
+  <div class="card" id="liquidity-card" style="margin-bottom:10px;display:none;">
+    <div class="card-title">🏦 السيولة — بداية الشهر</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;" id="liquidity-balances"></div>
+    <div class="highlight-row" style="border-top:1px solid var(--border);padding-top:10px;">
+      <span class="hl-label">💳 كاش في البنك</span>
+      <span class="hl-value positive" id="liquidity-total">—</span>
+    </div>
+    <div class="highlight-row">
+      <span class="hl-label">🌐 إجمالي السيولة (بنك + محافظ)</span>
+      <span class="hl-value accent" id="liquidity-new-revenue">—</span>
+    </div>
+    <div class="section-sep"></div>
+    <div class="highlight-row">
+      <span class="hl-label" style="font-weight:700;">السيولة الكاملة</span>
+      <span class="hl-value accent" id="liquidity-available" style="font-size:18px;">—</span>
+    </div>
+  </div>
+
+  <!-- جدول الشقق -->
+  <div class="card" style="margin-bottom:10px;">
+    <div class="card-title" id="apts-table-title">📊 الشقق</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;" id="apts-table">
+        <thead>
+          <tr style="font-size:11px;color:var(--text2);border-bottom:1px solid var(--border);">
+            <th style="text-align:right;padding:6px 4px;font-weight:600;">الشقة</th>
+            <th style="text-align:center;padding:6px 4px;font-weight:600;">إيراد</th>
+            <th style="text-align:center;padding:6px 4px;font-weight:600;">مصاريف</th>
+            <th style="text-align:right;padding:6px 4px;font-weight:600;">صافي</th>
+          </tr>
+        </thead>
+        <tbody id="apts-table-body"></tbody>
+        <tfoot id="apts-table-foot"></tfoot>
+      </table>
+    </div>
+    <div style="font-size:10px;color:var(--text2);margin-top:8px;padding-top:6px;border-top:1px solid var(--border);" id="accrual-note"></div>
+  </div>
+
+  <!-- الالتزامات القادمة -->
+  <div class="card" style="margin-bottom:10px;" id="obligations-card">
+    <div class="card-title">⚠️ الالتزامات القادمة</div>
+    <div id="obligations-list"></div>
+  </div>
+
+  <!-- التوزيع -->
+  <div class="card" id="distribution-card" style="display:none;">
+    <div class="card-title">💰 التوزيع على الشركاء</div>
+    <div id="distribution-content"></div>
+  </div>
+
+  <!-- التقرير التفصيلي القديم (مخفي) -->
+  <div id="old-stats-container" style="display:none;">
+    <div class="stats-grid" id="stats-cards"></div>
+    <div id="apt-stats"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ DATA STORE ============
+let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+let expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+
+const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const PLATFORM_NAMES = { B: 'بوكينج', G: 'قاذران', A: 'إيربنب', D: 'مباشر' };
+const APT_NAMES = { '6': 'M6', '103': '103', '105': '105', '110': '110', '207': '207' };
+
+// ============ TABS ============
+function switchTab(tab, triggerEl) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const el = triggerEl || (typeof event !== 'undefined' && event.target);
+  if (el) el.classList.add('active');
+  else document.querySelectorAll('.tab')[['add','list','expenses','stats'].indexOf(tab)]?.classList.add('active');
+  document.getElementById('page-' + tab).classList.add('active');
+  if (tab === 'list') renderList();
+  if (tab === 'stats') renderStats();
+  if (tab === 'expenses') renderExpensesList();
+}
+
+// ============ FORM HELPERS ============
+function selectApt(btn, val) {
+  document.querySelectorAll('#apt-select .platform-btn').forEach(b => b.className = 'platform-btn');
+  btn.className = 'platform-btn selected-B';
+  document.getElementById('f-apt').value = val;
+}
+function selectPlatform(btn, val) {
+  document.querySelectorAll('#platform-select .platform-btn').forEach(b => b.className = 'platform-btn');
+  btn.className = 'platform-btn selected-' + val;
+  document.getElementById('f-platform').value = val;
+  const showLiq = val === 'B' || val === 'A';
+  document.getElementById('liquidity-row').style.display = showLiq ? '' : 'none';
+  if (!showLiq) document.getElementById('f-liquidity').value = 'received';
+  // تحديث نص زر المحفظة
+  const walletBtn = document.getElementById('liq-wallet-btn');
+  if (walletBtn) walletBtn.textContent = val === 'A' ? '⏳ في محفظة إيربنب' : '⏳ في محفظة بوكينج';
+}
+function selectLiquidity(btn, val) {
+  document.querySelectorAll('.liq-btn').forEach(b => b.className = 'liq-btn');
+  btn.className = 'liq-btn selected-' + val;
+  document.getElementById('f-liquidity').value = val;
+}
+
+// Init
+document.getElementById('liquidity-row').style.display = 'none';
+document.getElementById('f-liquidity').value = 'received';
+
+// Expense auto-total
+['exp-clean','exp-net','exp-elec','exp-misc','exp-comm','exp-maint','exp-rent','exp-rent-months','exp-clean-months'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateExpTotal);
+});
+
+let otherExpenseCounter = 0;
+function addOtherExpenseRow(desc = '', amount = '') {
+  otherExpenseCounter++;
+  const rowId = 'other-exp-' + otherExpenseCounter;
+  const row = document.createElement('div');
+  row.className = 'other-expense-row';
+  row.id = rowId;
+  row.innerHTML = `
+    <input type="text" placeholder="وصف المصروف (مثال: إصلاح مكيف)" class="other-exp-desc" value="${desc}">
+    <input type="number" placeholder="المبلغ" class="other-exp-amount" value="${amount}">
+    <button class="other-expense-remove" onclick="removeOtherExpenseRow('${rowId}')">🗑</button>
+  `;
+  row.querySelector('.other-exp-amount').addEventListener('input', updateExpTotal);
+  document.getElementById('other-expenses-container').appendChild(row);
+}
+function removeOtherExpenseRow(rowId) {
+  const row = document.getElementById(rowId);
+  if (row) row.remove();
+  updateExpTotal();
+}
+function getOtherExpenses() {
+  const rows = document.querySelectorAll('#other-expenses-container .other-expense-row');
+  const items = [];
+  rows.forEach(row => {
+    const desc = row.querySelector('.other-exp-desc').value.trim();
+    const amount = parseFloat(row.querySelector('.other-exp-amount').value) || 0;
+    if (desc || amount) items.push({ desc, amount });
+  });
+  return items;
+}
+function updateExpTotal() {
+  const ids = ['exp-clean','exp-net','exp-elec','exp-misc','exp-comm','exp-maint','exp-rent'];
+  let total = ids.reduce((s, id) => s + (parseFloat(document.getElementById(id).value) || 0), 0);
+  total += getOtherExpenses().reduce((s, item) => s + item.amount, 0);
+  document.getElementById('exp-total').value = total.toFixed(2);
+}
+
+// ============ VOICE ============
+let recognition = null;
+let isListening = false;
+
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    showToast('المتصفح لا يدعم الإدخال الصوتي. استخدم Chrome أو Edge', true);
+    return;
+  }
+  if (isListening) {
+    recognition && recognition.stop();
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'ar-SA';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('voiceBtn').classList.add('listening');
+    document.getElementById('voiceStatus').textContent = '🔴 جاري الاستماع...';
+    document.getElementById('voiceTranscript').style.display = 'block';
+  };
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('voiceTranscript').textContent = transcript;
+    if (e.results[e.results.length - 1].isFinal) parseVoiceInput(transcript);
+  };
+  recognition.onerror = () => {
+    showToast('حدث خطأ في الميكروفون', true);
+    stopVoice();
+  };
+  recognition.onend = () => stopVoice();
+  recognition.start();
+}
+
+function stopVoice() {
+  isListening = false;
+  document.getElementById('voiceBtn').classList.remove('listening');
+  document.getElementById('voiceStatus').textContent = 'اضغط للتحدث';
+}
+
+function parseArabicDate(text) {
+  // Map Arabic month names to numbers
+  const monthMap = {
+    'يناير': '01', 'جانفي': '01',
+    'فبراير': '02', 'فيفري': '02',
+    'مارس': '03',
+    'أبريل': '04', 'ابريل': '04', 'أبريل': '04',
+    'مايو': '05', 'ماي': '05',
+    'يونيو': '06', 'جوان': '06',
+    'يوليو': '07', 'يوليه': '07',
+    'أغسطس': '08', 'اغسطس': '08',
+    'سبتمبر': '09',
+    'أكتوبر': '10', 'اكتوبر': '10',
+    'نوفمبر': '11',
+    'ديسمبر': '12', 'دجنبر': '12'
+  };
+
+  // Arabic-Eastern numerals to Western
+  const toWestern = s => s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+
+  const t = toWestern(text);
+  const year = new Date().getFullYear();
+
+  for (const [monthName, monthNum] of Object.entries(monthMap)) {
+    // Pattern: "12 يونيو" or "يونيو 12"
+    const re1 = new RegExp(`(\\d{1,2})\\s*${monthName}`);
+    const re2 = new RegExp(`${monthName}\\s*(\\d{1,2})`);
+    const m = t.match(re1) || t.match(re2);
+    if (m) {
+      const day = m[1].padStart(2, '0');
+      return `${year}-${monthNum}-${day}`;
+    }
+  }
+  return null;
+}
+
+function parseVoiceInput(text) {
+  // نستخدم النص الأصلي للتواريخ العربية، و lowercase للإنجليزي فقط
+  const t = text;
+  const tl = text.toLowerCase();
+
+  // Extract name — يقبل "اسم الضيف ..." أو أول جملة قبل الفاصلة
+  const nameMatch = t.match(/اسم الضيف\s+([^،,\n]+)/) || t.match(/^([^،,\n]+)/);
+  if (nameMatch) document.getElementById('f-name').value = nameMatch[1].trim();
+
+  // Extract apartment
+  const aptMap = { 'مية وخمسة|105': '105', 'مية وعشرة|110|١١٠': '110', 'مية وسبعة|207|٢٠٧': '207', 'مية وثلاثة|103|١٠٣': '103', 'ستة|m6': '6' };
+  for (const [pattern, val] of Object.entries(aptMap)) {
+    if (new RegExp(pattern).test(t)) {
+      document.getElementById('f-apt').value = val;
+      document.querySelectorAll('#apt-select .platform-btn').forEach(b => {
+        b.className = b.dataset.val === val ? 'platform-btn selected-B' : 'platform-btn';
+      });
+      break;
+    }
+  }
+
+  // Extract checkin date — "وصول 12 يونيو" أو "من 12 يونيو"
+  const checkinText = t.match(/(?:وصول|وصل|من|تسجيل الوصول)\s+(.{3,20})/);
+  if (checkinText) {
+    const d = parseArabicDate(checkinText[1]);
+    if (d) document.getElementById('f-checkin').value = d;
+  } else {
+    const d = parseArabicDate(t.split(/مغادر|خروج|إلى|الى/)[0]);
+    if (d) document.getElementById('f-checkin').value = d;
+  }
+
+  // Extract checkout date — "مغادرة 14 يونيو" أو "حتى 14 يونيو"
+  const checkoutText = t.match(/(?:مغادرة|مغادر|خروج|حتى|إلى|الى)\s+(.{3,20})/);
+  if (checkoutText) {
+    const d = parseArabicDate(checkoutText[1]);
+    if (d) document.getElementById('f-checkout').value = d;
+  }
+
+  // Extract price
+  const priceMatch = t.match(/(?:السعر|سعر|بسعر)\s*([\d٠-٩]+)/);
+  if (priceMatch) document.getElementById('f-price').value = priceMatch[1].replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+
+  // Extract platform
+  if (t.includes('بوكينج') || t.includes('booking')) {
+    document.getElementById('f-platform').value = 'B';
+    document.querySelectorAll('#platform-select .platform-btn').forEach(b => {
+      b.className = b.dataset.val === 'B' ? 'platform-btn selected-B' : 'platform-btn';
+    });
+    document.getElementById('liquidity-row').style.display = '';
+  } else if (t.includes('قاذران')) {
+    document.getElementById('f-platform').value = 'G';
+    document.querySelectorAll('#platform-select .platform-btn').forEach(b => {
+      b.className = b.dataset.val === 'G' ? 'platform-btn selected-G' : 'platform-btn';
+    });
+  } else if (t.includes('ايربنب') || t.includes('إيربنب') || t.includes('airbnb')) {
+    document.getElementById('f-platform').value = 'A';
+    document.querySelectorAll('#platform-select .platform-btn').forEach(b => {
+      b.className = b.dataset.val === 'A' ? 'platform-btn selected-A' : 'platform-btn';
+    });
+  } else if (t.includes('مباشر')) {
+    document.getElementById('f-platform').value = 'D';
+    document.querySelectorAll('#platform-select .platform-btn').forEach(b => {
+      b.className = b.dataset.val === 'D' ? 'platform-btn selected-D' : 'platform-btn';
+    });
+  }
+
+  showToast('✅ تم تحليل الصوت، راجع البيانات');
+}
+
+// ============ SAVE BOOKING ============
+function saveBooking() {
+  const name = document.getElementById('f-name').value.trim();
+  const apt = document.getElementById('f-apt').value;
+  const checkin = document.getElementById('f-checkin').value;
+  const checkout = document.getElementById('f-checkout').value;
+  const price = parseFloat(document.getElementById('f-price').value) || 0;
+  const phone = document.getElementById('f-phone').value.trim();
+  const platform = document.getElementById('f-platform').value;
+  const liquidity = document.getElementById('f-liquidity').value;
+  const notes = document.getElementById('f-notes').value.trim();
+
+  if (!name) { showToast('أدخل اسم الضيف', true); return; }
+  if (!apt) { showToast('اختر الشقة', true); return; }
+  if (!checkin || !checkout) { showToast('أدخل تواريخ الوصول والمغادرة', true); return; }
+  if (!platform) { showToast('اختر المنصة', true); return; }
+
+  const nights = Math.max(1, Math.round((new Date(checkout) - new Date(checkin)) / 86400000));
+  const month = new Date(checkin).getMonth() + 1;
+  const year = new Date(checkin).getFullYear();
+
+  const booking = {
+    id: Date.now(),
+    name, apt, checkin, checkout, price, phone, platform,
+    liquidity: (platform === 'B' || platform === 'A') ? liquidity : 'received',
+    notes, nights, month, year,
+    monthLabel: MONTHS_AR[month - 1] + ' ' + year
+  };
+
+  bookings.push(booking);
+  localStorage.setItem('bookings', JSON.stringify(bookings));
+  showToast('✅ تم حفظ الحجز');
+  clearForm();
+}
+
+function clearForm() {
+  ['f-name','f-apt','f-checkin','f-checkout','f-price','f-phone','f-notes'].forEach(id => document.getElementById(id).value = '');
+  document.querySelectorAll('#apt-select .platform-btn, #platform-select .platform-btn').forEach(b => b.className = 'platform-btn');
+  document.querySelectorAll('.liq-btn').forEach(b => b.className = 'liq-btn');
+  document.getElementById('f-platform').value = '';
+  document.getElementById('f-liquidity').value = 'received';
+  document.getElementById('liquidity-row').style.display = 'none';
+  document.getElementById('voiceTranscript').style.display = 'none';
+  document.getElementById('voiceTranscript').textContent = '';
+}
+
+// ============ RENDER LIST ============
+function renderList() {
+  const aptF = document.getElementById('filter-apt').value;
+  const monthF = document.getElementById('filter-month').value;
+  const platF = document.getElementById('filter-platform').value;
+
+  // Populate month filter
+  const months = [...new Set(bookings.map(b => b.monthLabel))];
+  const mSel = document.getElementById('filter-month');
+  const curVal = mSel.value;
+  mSel.innerHTML = '<option value="">كل الأشهر</option>' + months.map(m => `<option value="${m}" ${m===curVal?'selected':''}>${m}</option>`).join('');
+
+  let filtered = bookings.filter(b =>
+    (!aptF || b.apt === aptF) &&
+    (!monthF || b.monthLabel === monthF) &&
+    (!platF || b.platform === platF)
+  ).sort((a, b) => new Date(b.checkin) - new Date(a.checkin));
+
+  const container = document.getElementById('booking-list');
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>لا توجد حجوزات</p></div>';
+    return;
+  }
+
+  let html = '';
+  let lastMonth = '';
+  filtered.forEach(b => {
+    if (b.monthLabel !== lastMonth) {
+      html += `<div class="month-divider">📅 ${b.monthLabel}</div>`;
+      lastMonth = b.monthLabel;
+    }
+    const liqBadge = (b.platform === 'B' || b.platform === 'A')
+      ? `<span class="badge ${b.liquidity === 'received' ? 'badge-received' : 'badge-wallet'}">${b.liquidity === 'received' ? '✅ استُلم' : '⏳ محفظة'}</span>`
+      : '';
+    html += `
+      <div class="booking-item">
+        <div class="booking-header">
+          <div>
+            <div class="booking-name">${b.name}</div>
+            <div class="booking-apt">شقة ${APT_NAMES[b.apt]}</div>
+          </div>
+          <div class="booking-badges">
+            <span class="badge badge-${b.platform}">${PLATFORM_NAMES[b.platform]}</span>
+            ${liqBadge}
+          </div>
+        </div>
+        <div class="booking-details">
+          <div class="booking-detail">وصول<span>${formatDate(b.checkin)}</span></div>
+          <div class="booking-detail">مغادرة<span>${formatDate(b.checkout)}</span></div>
+          <div class="booking-detail">الليالي<span>${b.nights}</span></div>
+          <div class="booking-detail">السعر<span style="color:var(--accent)">${b.price} ر</span></div>
+          ${b.phone ? `<div class="booking-detail">الهاتف<span>${b.phone}</span></div>` : ''}
+          ${b.notes ? `<div class="booking-detail" style="grid-column:1/-1">ملاحظة<span>${b.notes}</span></div>` : ''}
+        </div>
+        <div class="booking-actions">
+          ${(b.platform === 'B' || b.platform === 'A') ? `<button class="btn btn-secondary btn-sm" onclick="toggleLiquidity(${b.id})">${b.liquidity === 'received' ? '⏳ نقل لمحفظة' : '✅ تم الاستلام'}</button>` : ''}
+          <button class="btn btn-secondary btn-sm" onclick="editBooking(${b.id})">✏️ تعديل</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteBooking(${b.id})">🗑 حذف</button>
+        </div>
+      </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function toggleLiquidity(id) {
+  const b = bookings.find(x => x.id === id);
+  if (b) {
+    b.liquidity = b.liquidity === 'received' ? 'wallet' : 'received';
+    localStorage.setItem('bookings', JSON.stringify(bookings));
+    renderList();
+    showToast('✅ تم تحديث حالة المبلغ');
+  }
+}
+
+function editBooking(id) {
+  const b = bookings.find(x => x.id === id);
+  if (!b) return;
+
+  // Switch to add tab
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  tabs[0].classList.add('active');
+  document.getElementById('page-add').classList.add('active');
+
+  // Fill form
+  document.getElementById('f-name').value = b.name;
+  document.getElementById('f-checkin').value = b.checkin;
+  document.getElementById('f-checkout').value = b.checkout;
+  document.getElementById('f-price').value = b.price;
+  document.getElementById('f-phone').value = b.phone || '';
+  document.getElementById('f-notes').value = b.notes || '';
+  document.getElementById('f-apt').value = b.apt;
+  document.getElementById('f-platform').value = b.platform;
+  document.getElementById('f-liquidity').value = b.liquidity;
+
+  // Highlight apt
+  document.querySelectorAll('#apt-select .platform-btn').forEach(btn => {
+    btn.className = btn.dataset.val === b.apt ? 'platform-btn selected-B' : 'platform-btn';
+  });
+  // Highlight platform
+  document.querySelectorAll('#platform-select .platform-btn').forEach(btn => {
+    btn.className = btn.dataset.val === b.platform ? 'platform-btn selected-' + b.platform : 'platform-btn';
+  });
+  // Show liquidity
+  const showLiq = b.platform === 'B' || b.platform === 'A';
+  document.getElementById('liquidity-row').style.display = showLiq ? '' : 'none';
+  const walletBtn = document.getElementById('liq-wallet-btn');
+  if (walletBtn) walletBtn.textContent = b.platform === 'A' ? '⏳ في محفظة إيربنب' : '⏳ في محفظة بوكينج';
+  document.querySelectorAll('.liq-btn').forEach(btn => btn.className = 'liq-btn');
+  document.querySelectorAll('.liq-btn').forEach(btn => {
+    if ((btn.textContent.includes('استُلم') && b.liquidity === 'received') ||
+        (btn.textContent.includes('محفظة') && b.liquidity === 'wallet')) {
+      btn.className = 'liq-btn selected-' + b.liquidity;
+    }
+  });
+
+  // Delete old booking and let save create new one
+  bookings = bookings.filter(x => x.id !== id);
+  localStorage.setItem('bookings', JSON.stringify(bookings));
+
+  showToast('✏️ عدّل البيانات واضغط حفظ');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateNameSuggestions() {
+  const input = document.getElementById('f-name').value.toLowerCase();
+  if (!input || input.length < 2) return;
+  const names = [...new Set(bookings.map(b => b.name).filter(n => n && n.toLowerCase().includes(input)))];
+  const list = document.getElementById('guest-names-list');
+  list.innerHTML = names.map(n => `<option value="${n}">`).join('');
+  // Auto-fill phone if exact match
+  if (names.length === 1 && names[0].toLowerCase() === input) {
+    const prev = bookings.find(b => b.name === names[0] && b.phone);
+    if (prev && !document.getElementById('f-phone').value) {
+      document.getElementById('f-phone').value = prev.phone;
+    }
+  }
+}
+
+function deleteBooking(id) {
+  bookings = bookings.filter(b => b.id !== id);
+  localStorage.setItem('bookings', JSON.stringify(bookings));
+  renderList();
+  showToast('تم الحذف');
+}
+
+// ============ EXPENSES ============
+function saveExpenses() {
+  const month = parseInt(document.getElementById('exp-month').value);
+  const apt = document.getElementById('exp-apt').value;
+  const year = new Date().getFullYear();
+  const key = `${year}-${month}-${apt}`;
+
+  const otherExpenses = getOtherExpenses();
+
+  const exp = {
+    key, month, apt, year,
+    monthLabel: MONTHS_AR[month - 1] + ' ' + year,
+    clean: parseFloat(document.getElementById('exp-clean').value) || 0,
+    cleanMonths: parseInt(document.getElementById('exp-clean-months').value) || 1,
+    net: parseFloat(document.getElementById('exp-net').value) || 0,
+    elec: parseFloat(document.getElementById('exp-elec').value) || 0,
+    misc: parseFloat(document.getElementById('exp-misc').value) || 0,
+    comm: parseFloat(document.getElementById('exp-comm').value) || 0,
+    maint: parseFloat(document.getElementById('exp-maint').value) || 0,
+    rent: parseFloat(document.getElementById('exp-rent').value) || 0,
+    rentMonths: parseInt(document.getElementById('exp-rent-months').value) || 1,
+    other: otherExpenses,
+    total: parseFloat(document.getElementById('exp-total').value) || 0
+  };
+
+  const idx = expenses.findIndex(e => e.key === key);
+  if (idx >= 0) {
+    expenses[idx] = exp;
+  } else {
+    expenses.push(exp);
+  }
+
+  // لو كنا نعدّل قيد قديم وتغير الشهر/الشقة، نحذف القيد القديم
+  if (editingExpenseKey && editingExpenseKey !== key) {
+    expenses = expenses.filter(e => e.key !== editingExpenseKey);
+  }
+  editingExpenseKey = null;
+
+  localStorage.setItem('expenses', JSON.stringify(expenses));
+  showToast('✅ تم حفظ المصاريف');
+  document.getElementById('other-expenses-container').innerHTML = '';
+  ['exp-clean','exp-net','exp-elec','exp-misc','exp-comm','exp-maint','exp-rent','exp-total'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('exp-rent-months').value = 1;
+  document.getElementById('exp-clean-months').value = 1;
+  renderExpensesList();
+}
+
+function renderExpensesList() {
+  const sorted = [...expenses].sort((a, b) => b.year - a.year || b.month - a.month);
+  const container = document.getElementById('expenses-list');
+  if (!sorted.length) { container.innerHTML = ''; return; }
+
+  let html = '<div class="card"><div class="card-title">📋 المصاريف المسجلة</div>';
+  sorted.forEach(e => {
+    const otherList = (e.other || []).filter(o => o.amount > 0 || o.desc);
+    html += `
+      <div class="expense-form-card">
+        <div class="expense-form-title">
+          <span>شقة ${APT_NAMES[e.apt]} — ${e.monthLabel}</span>
+          <span style="color:var(--red);font-size:13px">${e.total.toLocaleString()} ر</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px;color:var(--text2)">
+          ${e.clean ? `<span>نظافة: <b>${e.clean}</b>${e.cleanMonths > 1 ? ` <span style="color:var(--accent)">(${e.cleanMonths} شهور)</span>` : ''}</span>` : ''}
+          ${e.net ? `<span>إنترنت: <b>${e.net}</b></span>` : ''}
+          ${e.elec ? `<span>كهرباء: <b>${e.elec}</b></span>` : ''}
+          ${e.misc ? `<span>نثريات: <b>${e.misc}</b></span>` : ''}
+          ${e.comm ? `<span>عمولة: <b>${e.comm}</b></span>` : ''}
+          ${e.maint ? `<span>صيانة: <b>${e.maint}</b></span>` : ''}
+          ${e.rent ? `<span>إيجار: <b>${e.rent}</b></span>${e.rentMonths > 1 ? ` <span style="color:var(--accent)">(${e.rentMonths} شهور)</span>` : ''}` : ''}
+        </div>
+        ${otherList.length ? `
+        <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);">
+          <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:4px;">⚠️ مصاريف أخرى</div>
+          ${otherList.map(o => `<div style="font-size:12px;color:var(--text2);display:flex;justify-content:space-between;"><span>${o.desc || 'بدون وصف'}</span><span style="color:var(--text);font-weight:600;">${o.amount} ر</span></div>`).join('')}
+        </div>` : ''}
+        <div class="booking-actions">
+          <button class="btn btn-secondary btn-sm" onclick="editExpense('${e.key}')">✏️ تعديل</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteExpense('${e.key}')">🗑 حذف</button>
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+let editingExpenseKey = null;
+
+function editExpense(key) {
+  const e = expenses.find(x => x.key === key);
+  if (!e) return;
+
+  editingExpenseKey = key;
+
+  document.getElementById('exp-month').value = e.month;
+  document.getElementById('exp-apt').value = e.apt;
+  document.getElementById('exp-clean').value = e.clean || '';
+  document.getElementById('exp-clean-months').value = e.cleanMonths || 1;
+  document.getElementById('exp-net').value = e.net || '';
+  document.getElementById('exp-elec').value = e.elec || '';
+  document.getElementById('exp-misc').value = e.misc || '';
+  document.getElementById('exp-comm').value = e.comm || '';
+  document.getElementById('exp-maint').value = e.maint || '';
+  document.getElementById('exp-rent').value = e.rent || '';
+  document.getElementById('exp-rent-months').value = e.rentMonths || 1;
+
+  document.getElementById('other-expenses-container').innerHTML = '';
+  (e.other || []).forEach(o => addOtherExpenseRow(o.desc, o.amount));
+
+  updateExpTotal();
+  showToast('✏️ عدّل البيانات واضغط حفظ');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteExpense(key) {
+  if (!confirm('هل أنت متأكد من حذف هذا المصروف؟')) return;
+  expenses = expenses.filter(e => e.key !== key);
+  localStorage.setItem('expenses', JSON.stringify(expenses));
+  renderExpensesList();
+  showToast('تم الحذف');
+}
+
+// ============ STATS ============
+// ============ ACCRUAL CALCULATION (توزيع المصاريف المدفوعة مقدماً) ============
+// يحسب نصيب شهر معين من مصروف مُدفع مقدماً (إيجار/نظافة) بناءً على شهر الدفع وعدد الشهور المغطاة
+function getAccruedExpensesForApt(apt) {
+  // نبني خريطة: لكل شهر-سنة، كم نصيبه من كل مصروف موزّع
+  const accruedMap = {}; // key: "year-month" => amount
+
+  expenses.filter(e => e.apt === apt).forEach(e => {
+    // المصاريف الثابتة (غير مدفوعة مقدماً) — تُحسب كاملة في شهرها
+    const fixedAmount = (e.net||0) + (e.elec||0) + (e.misc||0) + (e.comm||0) + (e.maint||0)
+      + (e.other||[]).reduce((s,o)=>s+(o.amount||0),0);
+    addToAccrued(accruedMap, e.year, e.month, fixedAmount);
+
+    // الإيجار — يوزع على عدد الشهور المغطاة بدءاً من شهر الدفع
+    const rentMonths = e.rentMonths || 1;
+    const rentShare = (e.rent || 0) / rentMonths;
+    for (let i = 0; i < rentMonths; i++) {
+      const { y, m } = addMonths(e.year, e.month, i);
+      addToAccrued(accruedMap, y, m, rentShare);
+    }
+
+    // النظافة — نفس المبدأ
+    const cleanMonths = e.cleanMonths || 1;
+    const cleanShare = (e.clean || 0) / cleanMonths;
+    for (let i = 0; i < cleanMonths; i++) {
+      const { y, m } = addMonths(e.year, e.month, i);
+      addToAccrued(accruedMap, y, m, cleanShare);
+    }
+  });
+
+  return accruedMap;
+}
+function addToAccrued(map, year, month, amount) {
+  const key = `${year}-${month}`;
+  map[key] = (map[key] || 0) + amount;
+}
+
+// نسخة مفلترة — تأخذ قائمة مصاريف مفلترة مسبقاً
+function getAccruedExpensesForAptFiltered(apt, filteredExp) {
+  const accruedMap = {};
+  filteredExp.filter(e => e.apt === apt).forEach(e => {
+    const fixedAmount = (e.net||0)+(e.elec||0)+(e.misc||0)+(e.comm||0)+(e.maint||0)+(e.other||[]).reduce((s,o)=>s+(o.amount||0),0);
+    addToAccrued(accruedMap, e.year, e.month, fixedAmount);
+    const rentMonths = e.rentMonths || 1;
+    const rentShare = (e.rent||0) / rentMonths;
+    for (let i = 0; i < rentMonths; i++) {
+      const {y, m} = addMonths(e.year, e.month, i);
+      addToAccrued(accruedMap, y, m, rentShare);
+    }
+    const cleanMonths = e.cleanMonths || 1;
+    const cleanShare = (e.clean||0) / cleanMonths;
+    for (let i = 0; i < cleanMonths; i++) {
+      const {y, m} = addMonths(e.year, e.month, i);
+      addToAccrued(accruedMap, y, m, cleanShare);
+    }
+  });
+  return accruedMap;
+}
+function addMonths(year, month, offset) {
+  const total = (month - 1) + offset;
+  return { y: year + Math.floor(total / 12), m: (total % 12) + 1 };
+}
+function sumAccrued(accruedMap) {
+  return Object.values(accruedMap).reduce((s, v) => s + v, 0);
+}
+
+let statsMode = 'simple'; // simple or detailed
+
+function toggleStatsMode() {
+  statsMode = statsMode === 'simple' ? 'detailed' : 'simple';
+  document.getElementById('stats-mode-btn').textContent = statsMode === 'simple' ? 'تفصيلي' : 'مبسط';
+  renderStats();
+}
+
+function clearStatsFilter() {
+  document.getElementById('stats-month').value = '';
+  document.getElementById('stats-year').value = '';
+  renderStats();
+}
+
+function renderStats() {
+  const apts = ['6','103','105','110','207'];
+  const selMonth = parseInt(document.getElementById('stats-month').value) || null;
+  const selYear = parseInt(document.getElementById('stats-year').value) || null;
+  const periodLabel = selMonth && selYear ? `${MONTHS_AR[selMonth-1]} ${selYear}` : selYear ? `${selYear}` : 'كل الفترات';
+
+  const filteredBookings = bookings.filter(b =>
+    (!selMonth || b.month === selMonth) && (!selYear || b.year === selYear)
+  );
+  const filteredExpenses = expenses.filter(e =>
+    (!selMonth || e.month === selMonth) && (!selYear || e.year === selYear)
+  );
+
+  // ======= حساب الكاش والسيولة =======
+  const ob = JSON.parse(localStorage.getItem('openingBalance') || 'null');
+  const isOpeningPeriod = ob && ((selMonth === 7 && selYear === 2026) || (!selMonth && !selYear));
+  const obBank = isOpeningPeriod ? ob.bank : 0;
+  const obBooking = isOpeningPeriod ? ob.booking : 0;
+  const obAirbnb = isOpeningPeriod ? ob.airbnb : 0;
+  const airbnbThreshold = ob ? (ob.airbnb_threshold || 3750) : 3750;
+
+  // الإيرادات المستلمة في الحساب = كل حجز حالته "received" (مباشر + قاذران + بوكينج استُلم + إيربنب استُلم)
+  const cashRevenue = filteredBookings.filter(b => b.liquidity === 'received').reduce((s,b) => s + b.price, 0);
+
+  // مبالغ المحافظ
+  const bookingWallet = filteredBookings.filter(b => b.platform === 'B' && b.liquidity === 'wallet').reduce((s,b) => s + b.price, 0);
+  const airbnbWallet = filteredBookings.filter(b => b.platform === 'A' && b.liquidity === 'wallet').reduce((s,b) => s + b.price, 0);
+
+  // إيربنب: لو تجاوزت الحد تتحول للكاش
+  const airbnbWalletTotal = obAirbnb + airbnbWallet;
+  const airbnbAutoTransfer = airbnbWalletTotal >= airbnbThreshold ? airbnbWalletTotal : 0;
+  const airbnbRemaining = airbnbWalletTotal >= airbnbThreshold ? 0 : airbnbWalletTotal;
+
+  // الكاش الفعلي في البنك
+  const bankCash = obBank + cashRevenue + airbnbAutoTransfer;
+
+  // إجمالي السيولة = بنك + بوكينج + إيربنب المتبقي
+  const bookingWalletTotal = obBooking + bookingWallet;
+  const totalLiquidity = bankCash + bookingWalletTotal + airbnbRemaining;
+  const obTotal = obBank + obBooking + obAirbnb;
+
+  // ======= الواجهة المبسطة =======
+  document.getElementById('old-stats-container').style.display = statsMode === 'detailed' ? '' : 'none';
+
+  if (statsMode === 'detailed') {
+    // التقرير التفصيلي القديم
+    renderDetailedStats(apts, filteredBookings, filteredExpenses, ob, isOpeningPeriod, obTotal, periodLabel);
+    document.getElementById('liquidity-card').style.display = 'none';
+    document.getElementById('obligations-card').style.display = 'none';
+    document.getElementById('distribution-card').style.display = 'none';
+    document.getElementById('apts-table').closest('.card').style.display = 'none';
+    return;
+  }
+
+  // إخفاء التفصيلي وإظهار المبسط
+  document.getElementById('apts-table').closest('.card').style.display = '';
+  document.getElementById('obligations-card').style.display = '';
+
+  // ======= بطاقة السيولة =======
+  if (ob && isOpeningPeriod) {
+    document.getElementById('liquidity-card').style.display = '';
+    document.getElementById('liquidity-balances').innerHTML = `
+      <div style="background:var(--surface2);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:15px;font-weight:700;color:var(--green)">${bankCash.toLocaleString('en',{maximumFractionDigits:2})}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:2px">💳 كاش البنك</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:15px;font-weight:700;color:var(--accent)">${bookingWalletTotal.toLocaleString('en',{maximumFractionDigits:2})}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:2px">📱 بوكينج</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:15px;font-weight:700;color:${airbnbWalletTotal >= airbnbThreshold ? 'var(--green)' : 'var(--accent)'}">${airbnbWalletTotal.toLocaleString('en',{maximumFractionDigits:2})}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:2px">✈️ إيربنب${airbnbWalletTotal >= airbnbThreshold ? ' ✅' : ''}</div>
+      </div>`;
+    document.getElementById('liquidity-total').textContent = bankCash.toLocaleString('en',{maximumFractionDigits:2}) + ' ر';
+    document.getElementById('liquidity-new-revenue').textContent = totalLiquidity.toLocaleString('en',{maximumFractionDigits:2}) + ' ر';
+    document.getElementById('liquidity-available').textContent = totalLiquidity.toLocaleString('en',{maximumFractionDigits:2}) + ' ر';
+    document.getElementById('distribution-card').style.display = '';
+    if (airbnbWalletTotal >= airbnbThreshold) {
+      document.getElementById('liquidity-card').insertAdjacentHTML('beforeend',
+        `<div style="margin-top:8px;padding:8px;background:rgba(63,185,80,0.1);border-radius:8px;font-size:12px;color:var(--green);">
+          ✅ محفظة إيربنب تجاوزت 1,000$ — تم احتساب ${airbnbWalletTotal.toFixed(2)} ر ضمن الكاش تلقائياً
+        </div>`);
+    }
+  } else {
+    document.getElementById('liquidity-card').style.display = 'none';
+    document.getElementById('distribution-card').style.display = 'none';
+  }
+
+  // ======= جدول الشقق =======
+  document.getElementById('apts-table-title').textContent = `📊 الشقق — ${periodLabel}`;
+  let totalRev = 0, totalExp = 0, totalProfit = 0;
+  let rows = '';
+
+  apts.forEach(apt => {
+    const aptB = filteredBookings.filter(b => b.apt === apt);
+    if (!aptB.length && !filteredExpenses.find(e => e.apt === apt)) return;
+    const rev = aptB.reduce((s, b) => s + b.price, 0);
+    const accruedMap = getAccruedExpensesForAptFiltered(apt, filteredExpenses);
+    const exp = sumAccrued(accruedMap);
+    const profit = rev - exp;
+    totalRev += rev; totalExp += exp; totalProfit += profit;
+    const color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+    rows += `<tr style="border-top:0.5px solid var(--border);">
+      <td style="padding:8px 4px;font-weight:600;color:var(--text);">${APT_NAMES[apt]}</td>
+      <td style="text-align:center;padding:8px 4px;color:var(--text2);">${rev.toLocaleString()}</td>
+      <td style="text-align:center;padding:8px 4px;color:var(--text2);">${exp.toLocaleString()}</td>
+      <td style="padding:8px 4px;font-weight:700;color:${color};">${profit >= 0 ? '+' : ''}${profit.toFixed(0)}</td>
+    </tr>`;
+  });
+
+  document.getElementById('apts-table-body').innerHTML = rows;
+  const totalColor = totalProfit >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('apts-table-foot').innerHTML = `
+    <tr style="border-top:2px solid var(--border);">
+      <td style="padding:8px 4px;font-weight:700;">الإجمالي</td>
+      <td style="text-align:center;padding:8px 4px;font-weight:700;">${totalRev.toLocaleString()}</td>
+      <td style="text-align:center;padding:8px 4px;font-weight:700;">${totalExp.toLocaleString()}</td>
+      <td style="padding:8px 4px;font-weight:700;color:${totalColor};">${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(0)}</td>
+    </tr>`;
+  document.getElementById('accrual-note').textContent = 'المصاريف تشمل نصيب الشهر من الإيجارات الموزعة (Accrual)';
+
+  // ======= الالتزامات القادمة =======
+  const RENT_SCHEDULE = [
+    { apt: 'M6', nextDue: 'ديسمبر 2026', amount: '~12,000', urgency: 'low' },
+    { apt: '103', nextDue: 'يناير 2027', amount: '~15,000', urgency: 'low' },
+    { apt: '105', nextDue: 'أكتوبر 2026', amount: '8,250', urgency: 'medium' },
+    { apt: '110', nextDue: 'أكتوبر 2026', amount: '6,250', urgency: 'medium' },
+    { apt: '207', nextDue: 'أغسطس 2026', amount: '15,500', urgency: 'high' },
+  ].sort((a, b) => a.urgency === 'high' ? -1 : b.urgency === 'high' ? 1 : 0);
+
+  const urgencyColor = { high: 'var(--red)', medium: 'var(--accent)', low: 'var(--text2)' };
+  document.getElementById('obligations-list').innerHTML = RENT_SCHEDULE.map(r => `
+    <div class="highlight-row">
+      <span class="hl-label">إيجار ${r.apt} <span style="font-size:10px;color:var(--text2)">${r.nextDue}</span></span>
+      <span class="hl-value" style="color:${urgencyColor[r.urgency]}">${r.amount} ر</span>
+    </div>`).join('');
+
+  // ======= التوزيع =======
+  const partnerShare = bankCash / 2;
+  document.getElementById('distribution-content').innerHTML = `
+    <div class="highlight-row">
+      <span class="hl-label">💳 الكاش في البنك</span>
+      <span class="hl-value positive">${bankCash.toLocaleString('en',{maximumFractionDigits:2})} ر</span>
+    </div>
+    <div class="section-sep"></div>
+    <div class="highlight-row">
+      <span class="hl-label">نصيب كل شريك (50%)</span>
+      <span class="hl-value accent" style="font-size:16px;">${partnerShare.toFixed(2)} ر</span>
+    </div>`;
+}
+
+function renderDetailedStats(apts, filteredBookings, filteredExpenses, ob, isOpeningPeriod, obTotal, periodLabel) {
+  const totalRevenue = filteredBookings.reduce((s, b) => s + b.price, 0);
+  const totalCashExpenses = filteredExpenses.reduce((s, e) => s + e.total, 0);
+  const inWallet = filteredBookings.filter(b => (b.platform==='B'||b.platform==='A') && b.liquidity==='wallet').reduce((s,b)=>s+b.price,0);
+  const receivedRevenue = filteredBookings.filter(b=>b.liquidity==='received').reduce((s,b)=>s+b.price,0);
+  const cashLiquidity = obTotal + receivedRevenue - totalCashExpenses;
+  let totalAccruedExpenses = 0;
+  apts.forEach(apt => { totalAccruedExpenses += sumAccrued(getAccruedExpensesForAptFiltered(apt, filteredExpenses)); });
+  const accrualProfit = totalRevenue - totalAccruedExpenses;
+
+  document.getElementById('stats-cards').innerHTML = `
+    <div class="stat-card"><div class="stat-value">${totalRevenue.toLocaleString()}</div><div class="stat-label">إيرادات ${periodLabel}</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--accent)">${inWallet.toLocaleString()}</div><div class="stat-label">في المحافظ</div></div>
+    <div class="stat-card" style="grid-column:1/-1;border:1px solid var(--blue);">
+      <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px;">💧 السيولة الفعلية</div>
+      <div style="display:flex;justify-content:space-around;flex-wrap:wrap;gap:6px;">
+        ${ob && isOpeningPeriod ? `<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:var(--green)">${obTotal.toLocaleString()}</div><div style="font-size:10px;color:var(--text2)">رصيد افتتاحي</div></div>` : ''}
+        <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:var(--green)">${receivedRevenue.toLocaleString()}</div><div style="font-size:10px;color:var(--text2)">إيرادات مستلمة</div></div>
+        <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:var(--red)">${totalCashExpenses.toLocaleString()}</div><div style="font-size:10px;color:var(--text2)">مصاريف خرجت</div></div>
+        <div style="text-align:center"><div style="font-size:16px;font-weight:700;color:${cashLiquidity>=0?'var(--green)':'var(--red)'}">${cashLiquidity.toLocaleString()}</div><div style="font-size:10px;color:var(--text2)">صافي السيولة</div></div>
+      </div>
+    </div>
+    <div class="stat-card" style="grid-column:1/-1;border:1px solid var(--accent);">
+      <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:6px;">📊 الربح المُسوّى</div>
+      <div style="display:flex;justify-content:space-around;">
+        <div><div class="stat-value" style="font-size:16px;color:var(--red)">${totalAccruedExpenses.toLocaleString()}</div><div class="stat-label">نصيب الفترة</div></div>
+        <div><div class="stat-value" style="font-size:16px;color:${accrualProfit>=0?'var(--green)':'var(--red)'}">${accrualProfit.toLocaleString()}</div><div class="stat-label">صافي الربح</div></div>
+      </div>
+    </div>`;
+
+  let html = '';
+  apts.forEach(apt => {
+    const aptB = filteredBookings.filter(b=>b.apt===apt);
+    if (!aptB.length) return;
+    const rev = aptB.reduce((s,b)=>s+b.price,0);
+    const cashExp = filteredExpenses.filter(e=>e.apt===apt).reduce((s,e)=>s+e.total,0);
+    const accruedExp = sumAccrued(getAccruedExpensesForAptFiltered(apt, filteredExpenses));
+    const walletAmt = aptB.filter(b=>(b.platform==='B'||b.platform==='A')&&b.liquidity==='wallet').reduce((s,b)=>s+b.price,0);
+    html += `<div class="card">
+      <div class="card-title">🏠 شقة ${APT_NAMES[apt]}</div>
+      <div class="highlight-row"><span class="hl-label">الإيرادات</span><span class="hl-value accent">${rev.toLocaleString()} ر</span></div>
+      <div class="section-sep"></div>
+      <div class="highlight-row"><span class="hl-label">مصاريف فعلية</span><span class="hl-value negative">${cashExp.toLocaleString()} ر</span></div>
+      <div class="highlight-row"><span class="hl-label">مصاريف مُسوّاة</span><span class="hl-value negative">${accruedExp.toLocaleString()} ر</span></div>
+      <div class="highlight-row"><span class="hl-label">صافي الربح المُسوّى</span><span class="hl-value ${(rev-accruedExp)>=0?'positive':'negative'}">${(rev-accruedExp).toFixed(0)} ر</span></div>
+      ${walletAmt?`<div class="highlight-row"><span class="hl-label">⏳ في المحفظة</span><span class="hl-value" style="color:var(--accent)">${walletAmt.toLocaleString()} ر</span></div>`:''}
+    </div>`;
+  });
+  document.getElementById('apt-stats').innerHTML = html;
+}
+
+// ============ EXPORT ============
+function exportExpensesOnly() {
+  if (!expenses.length) { showToast('لا توجد مصاريف للتصدير', true); return; }
+
+  let csv = '\uFEFF';
+  csv += 'الشقة,الشهر,نظافة,شهور تغطية النظافة,إنترنت,كهرباء,نثريات,عمولة,صيانة,إيجار,شهور تغطية الإيجار,مصاريف أخرى (وصف:مبلغ),الإجمالي\n';
+  expenses.forEach(e => {
+    const otherStr = (e.other || []).filter(o=>o.amount||o.desc).map(o => `${o.desc||'بدون وصف'}:${o.amount}`).join(' | ');
+    csv += `${APT_NAMES[e.apt]},"${e.monthLabel}",${e.clean||0},${e.cleanMonths||1},${e.net||0},${e.elec||0},${e.misc||0},${e.comm||0},${e.maint||0},${e.rent||0},${e.rentMonths||1},"${otherStr}",${e.total||0}\n`;
+  });
+
+  downloadCSV(csv, `مصاريف_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportExcel() {
+  if (!bookings.length && !expenses.length) { showToast('لا توجد بيانات للتصدير', true); return; }
+
+  let csv = '\uFEFF'; // BOM for Arabic
+
+  if (bookings.length) {
+    csv += 'الحجوزات\n';
+    csv += 'رقم الحجز,اسم الضيف,الشقة,تاريخ الوصول,تاريخ المغادرة,عدد الليالي,السعر,المنصة,حالة المبلغ,رقم الهاتف,الشهر,ملاحظات\n';
+    bookings.forEach((b, i) => {
+      const liqLabel = b.platform === 'B' ? (b.liquidity === 'received' ? 'استُلم' : 'محفظة بوكينج') : 'استُلم';
+      csv += `${i+1},"${b.name}",${APT_NAMES[b.apt]},${b.checkin},${b.checkout},${b.nights},${b.price},${PLATFORM_NAMES[b.platform]},${liqLabel},"${(b.phone||'').replace(/"/g,'')}","${b.monthLabel}","${(b.notes||'').replace(/"/g,'')}"\n`;
+    });
+  }
+
+  if (expenses.length) {
+    csv += '\n\nالمصاريف\n';
+    csv += 'الشقة,الشهر,نظافة,شهور تغطية النظافة,إنترنت,كهرباء,نثريات,عمولة,صيانة,إيجار,شهور تغطية الإيجار,مصاريف أخرى (وصف:مبلغ),الإجمالي\n';
+    expenses.forEach(e => {
+      const otherStr = (e.other || []).filter(o=>o.amount||o.desc).map(o => `${o.desc||'بدون وصف'}:${o.amount}`).join(' | ');
+      csv += `${APT_NAMES[e.apt]},"${e.monthLabel}",${e.clean||0},${e.cleanMonths||1},${e.net||0},${e.elec||0},${e.misc||0},${e.comm||0},${e.maint||0},${e.rent||0},${e.rentMonths||1},"${otherStr}",${e.total||0}\n`;
+    });
+  }
+
+  downloadCSV(csv, `حجوزات_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function downloadCSV(csvContent, filename) {
+  try {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // iOS Safari: navigator.share أو فتح نافذة جديدة كحل بديل عن التحميل المباشر
+    if (navigator.share && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      const file = new File([blob], filename, { type: 'text/csv' });
+      navigator.share({ files: [file], title: filename })
+        .then(() => showToast('✅ تم التصدير'))
+        .catch(() => fallbackDownload(blob, filename));
+      return;
+    }
+    fallbackDownload(blob, filename);
+  } catch (err) {
+    showToast('❌ حدث خطأ في التصدير', true);
+  }
+}
+
+function fallbackDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 200);
+  showToast('✅ تم التصدير — تحقق من مجلد التنزيلات');
+}
+
+// ============ UTILS ============
+function formatDate(d) {
+  if (!d) return '-';
+  const [y, m, day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '') + ' show';
+  setTimeout(() => t.className = 'toast' + (isError ? ' error' : ''), 2500);
+}
+
+// Init
+renderList();
+updateNameSuggestions();
+</script>
+</body>
+</html>
