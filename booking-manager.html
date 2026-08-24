@@ -1474,8 +1474,13 @@ function renderStats() {
   const airbnbAutoTransfer = airbnbWalletTotal >= airbnbThreshold ? airbnbWalletTotal : 0;
   const airbnbRemaining = airbnbWalletTotal >= airbnbThreshold ? 0 : airbnbWalletTotal;
 
+  // المصاريف الفعلية المدفوعة من البنك (كل المصاريف المسجّلة حتى الآن)
+  const totalCashExpensesPaid = expenses.filter(e =>
+    isOpeningPeriod ? (e.year === 2026 && (e.month === 7 || e.month === 8)) : true
+  ).reduce((s, e) => s + e.total, 0);
+
   // الكاش الفعلي في البنك
-  const bankCash = obBank + cashRevenue + airbnbAutoTransfer;
+  const bankCash = obBank + cashRevenue + airbnbAutoTransfer - totalCashExpensesPaid;
 
   // إجمالي السيولة = بنك + بوكينج + إيربنب المتبقي
   const bookingWalletTotal = obBooking + bookingWallet;
