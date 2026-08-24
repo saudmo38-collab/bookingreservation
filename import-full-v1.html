@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>استيراد شامل — يوليو وأغسطس 2026</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f9; color: #1a1f2e; padding: 20px; }
+  .card { background: #fff; border: 1px solid #dde1e7; border-radius: 12px; padding: 20px; max-width: 500px; margin: 20px auto; }
+  h2 { color: #c8860a; margin-bottom: 6px; font-size: 18px; }
+  .sub { color: #6b7280; font-size: 13px; margin-bottom: 16px; }
+  .summary { background: #f0f2f5; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; }
+  .row { display:flex; justify-content:space-between; padding: 5px 0; border-bottom: 1px solid #dde1e7; }
+  .row:last-child { border:none; font-weight:700; color:#c8860a; }
+  button { background: #c8860a; color: #fff; border: none; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom:8px; }
+  button:hover { background: #e6a817; }
+  .btn-danger { background: #dc2626; }
+  .result { margin-top: 12px; font-size: 13px; padding: 10px; border-radius: 8px; text-align:center; }
+  .success { background: #dcfce7; color: #16a34a; }
+  .error { background: #fee2e2; color: #dc2626; }
+  .warning { background:#fef9c3;color:#92400e;font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>📥 استيراد شامل — يوليو وأغسطس 2026</h2>
+  <p class="sub">نسخة محدّثة ونهائية بكل البيانات</p>
+  <div class="warning">⚠️ سيتم استبدال بيانات يوليو وأغسطس 2026 كاملة. الأشهر الأخرى لن تُمس.</div>
+  <div class="summary">
+    <div class="row"><span>🏦 رصيد البنك (قبل يوليو)</span><span>6,658.56 ر</span></div>
+    <div class="row"><span>📱 محفظة بوكينج</span><span>10,680.75 ر</span></div>
+    <div class="row"><span>✈️ محفظة إيربنب</span><span>434.47 ر</span></div>
+    <div class="row"><span>📋 حجوزات يوليو</span><span>34 حجز</span></div>
+    <div class="row"><span>📋 حجوزات أغسطس</span><span>22 حجز</span></div>
+    <div class="row"><span>💸 مصاريف يوليو</span><span>5 شقق</span></div>
+    <div class="row"><span>💸 مصاريف أغسطس + إيجار 207</span><span>3 شقق</span></div>
+  </div>
+  <button onclick="importData()">✅ استيراد الآن</button>
+  <button class="btn-danger" onclick="clearMonths()">🗑 مسح يوليو وأغسطس</button>
+  <div class="result" id="result"></div>
+</div>
+<script>
+const BOOKINGS = [
+// ===== يوليو 2026 =====
+{"apt":"6","name":"Abdullah Kaabi","checkin":"2026-07-06","checkout":"2026-07-07","price":243,"nights":1,"phone":"+966546845516","platform":"B","liquidity":"wallet","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100000000},
+{"apt":"103","name":"ALSAEED AHMED","checkin":"2026-07-04","checkout":"2026-07-06","price":729,"nights":2,"phone":"502210006","platform":"B","liquidity":"wallet","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100001000},
+{"apt":"105","name":"HANEEN IBRAHEM","checkin":"2026-07-01","checkout":"2026-07-15","price":3500,"nights":14,"phone":"+966534875745","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100002000},
+{"apt":"110","name":"Dilara Gunbogan","checkin":"2026-07-01","checkout":"2026-07-28","price":2793.1,"nights":27,"phone":"+966598999991","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100003000},
+{"apt":"207","name":"Aseel Alduweesh","checkin":"2026-07-01","checkout":"2026-07-02","price":270,"nights":1,"phone":"533080855","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100004000},
+{"apt":"207","name":"MANSOUR","checkin":"2026-07-03","checkout":"2026-07-04","price":250,"nights":1,"phone":"599077787","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100005000},
+{"apt":"207","name":"NASSER ALQAHTANI","checkin":"2026-07-04","checkout":"2026-07-05","price":362,"nights":1,"phone":"507752570","platform":"B","liquidity":"wallet","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100006000},
+{"apt":"207","name":"AHMED","checkin":"2026-07-05","checkout":"2026-07-06","price":212.41,"nights":1,"phone":"508473144","platform":"A","liquidity":"wallet","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100007000},
+{"apt":"207","name":"Aseel Alduweesh","checkin":"2026-07-06","checkout":"2026-07-08","price":540,"nights":2,"phone":"533080855","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100008000},
+{"apt":"207","name":"Abdullah Alsafar","checkin":"2026-07-08","checkout":"2026-07-09","price":229.51,"nights":1,"phone":"+966541111890","platform":"G","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100009000},
+{"apt":"207","name":"Aseel Alduweesh","checkin":"2026-07-09","checkout":"2026-07-10","price":270,"nights":1,"phone":"0533080855","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100010000},
+{"apt":"6","name":"Yahya Maooh","checkin":"2026-07-09","checkout":"2026-07-10","price":202.6,"nights":1,"phone":"+966506869562","platform":"B","liquidity":"wallet","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100011000},
+{"apt":"103","name":"ahmed adel al roujoula","checkin":"2026-07-08","checkout":"2026-07-12","price":1200,"nights":4,"phone":"971582187999","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100012000},
+{"apt":"207","name":"Aseel Alduweesh","checkin":"2026-07-13","checkout":"2026-07-14","price":270,"nights":1,"phone":"533080855","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100013000},
+{"apt":"207","name":"Abdullah Asiri","checkin":"2026-07-10","checkout":"2026-07-11","price":243,"nights":1,"phone":"+966500812812","platform":"B","liquidity":"received","notes":"محول من 110","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100014000},
+{"apt":"6","name":"Ahmed Aboukhozayem","checkin":"2026-07-10","checkout":"2026-07-11","price":226.8,"nights":1,"phone":"+966509103686","platform":"B","liquidity":"wallet","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100015000},
+{"apt":"103","name":"AHMED ALSHAMMERI","checkin":"2026-07-12","checkout":"2026-07-13","price":226.8,"nights":1,"phone":"+966590707030","platform":"B","liquidity":"wallet","notes":"محول من M6","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100016000},
+{"apt":"6","name":"Abdulmohsen Alshehri","checkin":"2026-07-15","checkout":"2026-07-16","price":202.5,"nights":1,"phone":"+966545499005","platform":"B","liquidity":"wallet","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100017000},
+{"apt":"6","name":"Abdulmohsen Alshehri","checkin":"2026-07-16","checkout":"2026-07-17","price":200,"nights":1,"phone":"+966545499005","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100018000},
+{"apt":"207","name":"Majed Almohawes","checkin":"2026-07-16","checkout":"2026-07-18","price":484.52,"nights":2,"phone":"+966508663455","platform":"G","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100019000},
+{"apt":"103","name":"Malak alfarha","checkin":"2026-07-17","checkout":"2026-07-18","price":226.8,"nights":1,"phone":"+966502636836","platform":"B","liquidity":"wallet","notes":"محول من M6","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100020000},
+{"apt":"6","name":"Bandar Almutairi","checkin":"2026-07-21","checkout":"2026-07-22","price":250,"nights":1,"phone":"+966543836825","platform":"B","liquidity":"received","notes":"محول من 110","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100021000},
+{"apt":"207","name":"Abdulaziz Altwaihr","checkin":"2026-07-20","checkout":"2026-07-24","price":918.05,"nights":4,"phone":"+966542328024","platform":"G","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100022000},
+{"apt":"207","name":"Aseel Alduweesh","checkin":"2026-07-19","checkout":"2026-07-20","price":0,"nights":1,"phone":"533080855","platform":"D","liquidity":"received","notes":"يوم هدية كتعويض عن الحشرات","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100023000},
+{"apt":"103","name":"ahmed adel al roujoula","checkin":"2026-07-21","checkout":"2026-07-24","price":900,"nights":3,"phone":"971582187999","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100024000},
+{"apt":"6","name":"Moath Alahmdi","checkin":"2026-07-25","checkout":"2026-07-26","price":191.26,"nights":1,"phone":"+966535565151","platform":"G","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100025000},
+{"apt":"105","name":"HANEEN IBRAHEM","checkin":"2026-07-15","checkout":"2026-07-25","price":2500,"nights":10,"phone":"+966534875745","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100026000},
+{"apt":"6","name":"Mounir Aboufath","checkin":"2026-07-28","checkout":"2026-08-05","price":923.4,"nights":4,"phone":"+966509827851","platform":"B","liquidity":"wallet","notes":"نصيب يوليو 4 ليالي","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100027000},
+{"apt":"103","name":"abdulwahab yahya","checkin":"2026-07-30","checkout":"2026-07-31","price":243,"nights":1,"phone":"+966558732128","platform":"B","liquidity":"wallet","notes":"F110","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100028000},
+{"apt":"103","name":"Abdullah AlShabanat","checkin":"2026-07-29","checkout":"2026-07-30","price":243,"nights":1,"phone":"+966555411031","platform":"B","liquidity":"wallet","notes":"F110","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100029000},
+{"apt":"207","name":"Refaah aldossry","checkin":"2026-07-29","checkout":"2026-07-30","price":280,"nights":1,"phone":"+966502796080","platform":"D","liquidity":"received","notes":"","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100030000},
+{"apt":"207","name":"John Jommle","checkin":"2026-07-30","checkout":"2026-08-01","price":242.27,"nights":1,"phone":"+966501865632","platform":"G","liquidity":"received","notes":"نصيب يوليو ليلة واحدة","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100031000},
+{"apt":"103","name":"Rayan Albakhet","checkin":"2026-07-31","checkout":"2026-08-01","price":204,"nights":1,"phone":"+966546600520","platform":"G","liquidity":"received","notes":"FM6","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100032000},
+{"apt":"105","name":"HANEEN IBRAHEM","checkin":"2026-07-25","checkout":"2026-08-08","price":1350,"nights":6,"phone":"+966534875745","platform":"D","liquidity":"received","notes":"نصيب يوليو 6 ليالي","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100033000},
+{"apt":"110","name":"Dilara Gunbogan","checkin":"2026-07-28","checkout":"2026-08-26","price":310.34,"nights":3,"phone":"+966598999991","platform":"D","liquidity":"received","notes":"نصيب يوليو 3 ليالي","month":7,"year":2026,"monthLabel":"يوليو 2026","id":1700100034000},
+
+// ===== أغسطس 2026 =====
+{"apt":"6","name":"Mounir Aboufath","checkin":"2026-08-05","checkout":"2026-08-08","price":600,"nights":3,"phone":"+966509827851","platform":"D","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200000000},
+{"apt":"6","name":"meshal binqaoud","checkin":"2026-08-08","checkout":"2026-08-13","price":1215,"nights":5,"phone":"+966504454448","platform":"B","liquidity":"wallet","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200001000},
+{"apt":"6","name":"Mounir Aboufath","checkin":"2026-08-13","checkout":"2026-08-20","price":1400,"nights":7,"phone":"+966509827851","platform":"D","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200002000},
+{"apt":"6","name":"ALSAEED AHMED","checkin":"2026-08-20","checkout":"2026-08-21","price":250,"nights":1,"phone":"502210006","platform":"D","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200003000},
+{"apt":"6","name":"Mounir Aboufath","checkin":"2026-08-24","checkout":"2026-08-31","price":1400,"nights":7,"phone":"+966509827851","platform":"D","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200004000},
+{"apt":"6","name":"Mounir Aboufath","checkin":"2026-08-05","checkout":"2026-08-08","price":923.4,"nights":4,"phone":"+966509827851","platform":"B","liquidity":"wallet","notes":"نصيب أغسطس من حجز يوليو","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200005000},
+{"apt":"103","name":"Saleh alyami","checkin":"2026-08-06","checkout":"2026-08-08","price":453.6,"nights":2,"phone":"+966551239195","platform":"B","liquidity":"wallet","notes":"FM6","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200006000},
+{"apt":"103","name":"Musab almutiri","checkin":"2026-08-08","checkout":"2026-08-09","price":216.76,"nights":1,"phone":"+966553091508","platform":"G","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200007000},
+{"apt":"103","name":"ahmed adel al roujoula","checkin":"2026-08-10","checkout":"2026-08-15","price":1500,"nights":5,"phone":"971582187999","platform":"D","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200008000},
+{"apt":"103","name":"Abdullah Kaabi","checkin":"2026-08-16","checkout":"2026-08-17","price":243,"nights":1,"phone":"+966546845516","platform":"B","liquidity":"wallet","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200009000},
+{"apt":"103","name":"Saeeda Mashraqi","checkin":"2026-08-18","checkout":"2026-08-19","price":243,"nights":1,"phone":"+966566140640","platform":"B","liquidity":"wallet","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200010000},
+{"apt":"103","name":"ahmed alghamdi","checkin":"2026-08-19","checkout":"2026-08-22","price":931.5,"nights":3,"phone":"+966560563111","platform":"B","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200011000},
+{"apt":"105","name":"HANEEN IBRAHEM","checkin":"2026-08-08","checkout":"2026-08-22","price":3150,"nights":14,"phone":"+966534875745","platform":"D","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200012000},
+{"apt":"105","name":"HANEEN IBRAHEM","checkin":"2026-08-22","checkout":"2026-08-27","price":1350,"nights":5,"phone":"+966534875745","platform":"D","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200013000},
+{"apt":"105","name":"HANEEN IBRAHEM","checkin":"2026-08-08","checkout":"2026-08-08","price":1800,"nights":8,"phone":"+966534875745","platform":"D","liquidity":"received","notes":"نصيب أغسطس من حجز يوليو","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200014000},
+{"apt":"207","name":"Ahmed aseery","checkin":"2026-08-02","checkout":"2026-08-03","price":204,"nights":1,"phone":"+966554508489","platform":"G","liquidity":"received","notes":"جاء ووجد الماء مقطوع","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200015000},
+{"apt":"207","name":"Rakan almutiri","checkin":"2026-08-05","checkout":"2026-08-06","price":204,"nights":1,"phone":"+966507621902","platform":"G","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200016000},
+{"apt":"207","name":"Salman almutiri","checkin":"2026-08-06","checkout":"2026-08-07","price":242.27,"nights":1,"phone":"+966562226639","platform":"G","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200017000},
+{"apt":"207","name":"Mohammed alnutifat","checkin":"2026-08-11","checkout":"2026-08-12","price":216.76,"nights":1,"phone":"+966551676707","platform":"G","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200018000},
+{"apt":"207","name":"From shatha alharbi","checkin":"2026-08-14","checkout":"2026-08-15","price":297,"nights":1,"phone":"","platform":"D","liquidity":"received","notes":"من جارتنا شذا شقة 307","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200019000},
+{"apt":"207","name":"Majed Almohawes","checkin":"2026-08-15","checkout":"2026-08-16","price":229.5,"nights":1,"phone":"+966508663455","platform":"G","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200020000},
+{"apt":"207","name":"Refaah aldossry","checkin":"2026-08-23","checkout":"2026-08-24","price":229.5,"nights":1,"phone":"+966502796080","platform":"G","liquidity":"received","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200021000},
+{"apt":"207","name":"Yahya Alfasi","checkin":"2026-08-24","checkout":"2026-08-26","price":540,"nights":2,"phone":"+966543997966","platform":"B","liquidity":"wallet","notes":"","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200022000},
+{"apt":"110","name":"Dilara Gunbogan","checkin":"2026-07-28","checkout":"2026-08-26","price":2689.66,"nights":26,"phone":"+966598999991","platform":"D","liquidity":"received","notes":"نصيب أغسطس 26 ليلة","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200023000},
+{"apt":"207","name":"John Jommle","checkin":"2026-07-30","checkout":"2026-08-01","price":242.27,"nights":1,"phone":"+966501865632","platform":"G","liquidity":"received","notes":"نصيب أغسطس ليلة واحدة","month":8,"year":2026,"monthLabel":"أغسطس 2026","id":1700200024000}
+];
+
+const EXPENSES = [
+// ===== يوليو 2026 =====
+{"key":"2026-7-6","month":7,"apt":"6","year":2026,"monthLabel":"يوليو 2026","clean":300,"cleanMonths":1,"net":74.25,"elec":145,"misc":0,"comm":269.74,"maint":0,"rent":0,"rentMonths":1,"other":[{"desc":"اصلاح مكيف","amount":150}],"total":938.99},
+{"key":"2026-7-103","month":7,"apt":"103","year":2026,"monthLabel":"يوليو 2026","clean":313,"cleanMonths":1,"net":75,"elec":0,"misc":0,"comm":102.07,"maint":0,"rent":0,"rentMonths":1,"other":[{"desc":"ماء للدكتور","amount":12},{"desc":"علاقة ملابس مع تركيبها","amount":112},{"desc":"ماء للدكتور","amount":18}],"total":632.07},
+{"key":"2026-7-105","month":7,"apt":"105","year":2026,"monthLabel":"يوليو 2026","clean":0,"cleanMonths":1,"net":67.25,"elec":0,"misc":0,"comm":109.35,"maint":0,"rent":0,"rentMonths":1,"other":[],"total":176.6},
+{"key":"2026-7-110","month":7,"apt":"110","year":2026,"monthLabel":"يوليو 2026","clean":0,"cleanMonths":1,"net":35,"elec":114.75,"misc":0,"comm":182.3,"maint":0,"rent":0,"rentMonths":1,"other":[{"desc":"اصلاح سرير","amount":40}],"total":372.05},
+{"key":"2026-7-207","month":7,"apt":"207","year":2026,"monthLabel":"يوليو 2026","clean":0,"cleanMonths":1,"net":88.12,"elec":98.5,"misc":0,"comm":94.5,"maint":0,"rent":0,"rentMonths":1,"other":[],"total":281.12},
+
+// ===== أغسطس 2026 — إيجار 207 موزع على 6 شهور =====
+{"key":"2026-8-207","month":8,"apt":"207","year":2026,"monthLabel":"أغسطس 2026","clean":0,"cleanMonths":1,"net":0,"elec":0,"misc":0,"comm":0,"maint":0,"rent":15500,"rentMonths":6,"other":[],"total":15500},
+{"key":"2026-8-110","month":8,"apt":"110","year":2026,"monthLabel":"أغسطس 2026","clean":0,"cleanMonths":1,"net":0,"elec":111,"misc":0,"comm":0,"maint":0,"rent":0,"rentMonths":1,"other":[{"desc":"تركيب عين ساحرة","amount":40}],"total":151},
+{"key":"2026-8-103","month":8,"apt":"103","year":2026,"monthLabel":"أغسطس 2026","clean":0,"cleanMonths":1,"net":0,"elec":0,"misc":0,"comm":0,"maint":0,"rent":0,"rentMonths":1,"other":[{"desc":"ماء للدكتور","amount":15}],"total":15}
+];
+
+const OPENING_BALANCE = {
+  bank: 6658.56,
+  booking: 10680.75,
+  airbnb: 434.47,
+  airbnb_threshold: 3750,
+  date: "2026-07-01",
+  note: "رصيد افتتاحي يوليو 2026"
+};
+
+function importData() {
+  try {
+    const existing = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const filtered = existing.filter(b => !((b.month===7||b.month===8) && b.year===2026));
+    localStorage.setItem('bookings', JSON.stringify([...filtered, ...BOOKINGS]));
+
+    const existingExp = JSON.parse(localStorage.getItem('expenses') || '[]');
+    const filteredExp = existingExp.filter(e => !((e.month===7||e.month===8) && e.year===2026));
+    localStorage.setItem('expenses', JSON.stringify([...filteredExp, ...EXPENSES]));
+
+    localStorage.setItem('openingBalance', JSON.stringify(OPENING_BALANCE));
+
+    document.getElementById('result').innerHTML =
+      `<div class="success">✅ تم الاستيراد بنجاح<br>يوليو: ${BOOKINGS.filter(b=>b.month===7).length} حجز | أغسطس: ${BOOKINGS.filter(b=>b.month===8).length} حجز<br>أغلق هذه الصفحة وافتح التطبيق</div>`;
+  } catch(e) {
+    document.getElementById('result').innerHTML = '<div class="error">❌ خطأ: ' + e.message + '</div>';
+  }
+}
+
+function clearMonths() {
+  if (!confirm('مسح يوليو وأغسطس 2026؟')) return;
+  try {
+    const b = JSON.parse(localStorage.getItem('bookings')||'[]').filter(x=>!((x.month===7||x.month===8)&&x.year===2026));
+    const e = JSON.parse(localStorage.getItem('expenses')||'[]').filter(x=>!((x.month===7||x.month===8)&&x.year===2026));
+    localStorage.setItem('bookings', JSON.stringify(b));
+    localStorage.setItem('expenses', JSON.stringify(e));
+    localStorage.removeItem('openingBalance');
+    document.getElementById('result').innerHTML = '<div class="success">✅ تم المسح</div>';
+  } catch(e) {
+    document.getElementById('result').innerHTML = '<div class="error">❌ ' + e.message + '</div>';
+  }
+}
+</script>
+</body>
+</html>
