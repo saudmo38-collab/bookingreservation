@@ -781,6 +781,12 @@
     <div id="distribution-content"></div>
   </div>
 
+  <!-- فاتورة عمولات بوكينج -->
+  <div class="card" id="booking-commission-card" style="margin-bottom:10px;">
+    <div class="card-title">📱 عمولات بوكينج المستحقة</div>
+    <div id="booking-commission-content"></div>
+  </div>
+
   <!-- التقرير التفصيلي القديم (مخفي) -->
   <div id="old-stats-container" style="display:none;">
     <div class="stats-grid" id="stats-cards"></div>
@@ -1653,6 +1659,48 @@ function renderStats() {
       <span class="hl-label">نصيب كل شريك (50%)</span>
       <span class="hl-value accent" style="font-size:16px;">${partnerShare.toFixed(2)} ر</span>
     </div>`;
+
+  // ======= عمولات بوكينج =======
+  const COMMISSION_RATE = 0.1725;
+  const bookingApts = ['6','103','105','110','207'];
+  let commRows = '';
+  let totalBookingRevenue = 0;
+
+  bookingApts.forEach(apt => {
+    const aptBookingB = filteredBookings.filter(b => b.apt === apt && b.platform === 'B');
+    if (!aptBookingB.length) return;
+    const revenue = aptBookingB.reduce((s, b) => s + b.price, 0);
+    const totalComm = revenue * COMMISSION_RATE;
+    const netRevenue = revenue - totalComm;
+    totalBookingRevenue += revenue;
+
+    commRows += `
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-weight:700;color:var(--text);">شقة ${APT_NAMES[apt]}</span>
+          <span style="font-size:11px;color:var(--text2);">${aptBookingB.length} حجز</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+          <span>إيراد بوكينج:</span><span style="color:var(--text);font-weight:600;text-align:left;">${revenue.toFixed(2)} ر</span>
+          <span>العمولة (17.25%):</span><span style="color:var(--red);text-align:left;">-${totalComm.toFixed(2)} ر</span>
+          <span style="font-weight:700;color:var(--text);">صافي بعد العمولة:</span><span style="color:var(--green);font-weight:700;text-align:left;">${netRevenue.toFixed(2)} ر</span>
+        </div>
+      </div>`;
+  });
+
+  if (totalBookingRevenue > 0) {
+    const grandTotalComm = totalBookingRevenue * COMMISSION_RATE;
+    const grandNet = totalBookingRevenue - grandTotalComm;
+    document.getElementById('booking-commission-content').innerHTML = commRows + `
+      <div style="border-top:2px solid var(--border);padding-top:10px;margin-top:4px;">
+        <div class="highlight-row"><span class="hl-label">إجمالي إيرادات بوكينج</span><span class="hl-value accent">${totalBookingRevenue.toFixed(2)} ر</span></div>
+        <div class="highlight-row"><span class="hl-label">إجمالي العمولات المستحقة</span><span class="hl-value negative">${grandTotalComm.toFixed(2)} ر</span></div>
+        <div class="highlight-row"><span class="hl-label" style="font-weight:700;">صافي ما تستلمه</span><span class="hl-value positive" style="font-size:16px;">${grandNet.toFixed(2)} ر</span></div>
+      </div>`;
+    document.getElementById('booking-commission-card').style.display = '';
+  } else {
+    document.getElementById('booking-commission-card').style.display = 'none';
+  }
 }
 
 function renderDetailedStats(apts, filteredBookings, filteredExpenses, ob, isOpeningPeriod, obTotal, periodLabel, selMonth, selYear) {
