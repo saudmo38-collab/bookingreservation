@@ -6,6 +6,52 @@
 <title>إدارة الحجوزات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <style>
+  /* ===== LOGIN ===== */
+  .login-overlay {
+    position: fixed; inset: 0;
+    background: #f4f6f9;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+    font-family: 'Tajawal', sans-serif;
+  }
+  .login-card {
+    background: #fff;
+    border: 1px solid #dde1e7;
+    border-radius: 16px;
+    padding: 32px 24px;
+    width: 90%; max-width: 340px;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  .login-icon { font-size: 48px; margin-bottom: 12px; }
+  .login-title { font-size: 20px; font-weight: 800; color: #1a1f2e; margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: #6b7280; margin-bottom: 24px; }
+  .login-input {
+    width: 100%; padding: 12px 16px;
+    border: 1.5px solid #dde1e7; border-radius: 10px;
+    font-family: 'Tajawal', sans-serif; font-size: 16px;
+    text-align: center; letter-spacing: 4px;
+    margin-bottom: 12px; outline: none;
+    background: #f4f6f9; color: #1a1f2e;
+    transition: border-color 0.2s;
+  }
+  .login-input:focus { border-color: #c8860a; }
+  .login-btn {
+    width: 100%; padding: 13px;
+    background: #c8860a; color: #fff;
+    border: none; border-radius: 10px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .login-btn:hover { background: #e6a817; }
+  .login-error { color: #dc2626; font-size: 13px; margin-top: 8px; display: none; }
+  .login-readonly-badge {
+    display: inline-block; margin-top: 12px;
+    background: #fef9c3; color: #92400e;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
   :root {
     --bg: #f4f6f9;
     --surface: #ffffff;
@@ -489,12 +535,37 @@
 </head>
 <body>
 
+<!-- ===== LOGIN OVERLAY ===== -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-icon">🏠</div>
+    <div class="login-title">إدارة الحجوزات</div>
+    <div class="login-sub">أدخل الرقم السري للدخول</div>
+    <input type="password" class="login-input" id="loginPin" placeholder="• • • • •" maxlength="10"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">دخول</button>
+    <div class="login-error" id="loginError">❌ الرقم السري غير صحيح</div>
+    <div id="readonlyBadge" style="display:none">
+      <div class="login-readonly-badge">👁 صلاحية عرض فقط</div>
+    </div>
+  </div>
+</div>
+
+<div id="appContent" style="display:none;">
+
 <div class="header">
   <div>
     <div class="header-title">🏠 إدارة الحجوزات</div>
     <div class="header-sub">٥ شقق · بوكينج · قاذران · إيربنب</div>
   </div>
-  <button class="btn btn-secondary" onclick="exportExcel()" style="padding:7px 12px;font-size:12px;">⬇ تصدير</button>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <button class="btn btn-secondary" onclick="exportBackup()" style="padding:7px 10px;font-size:11px;">💾 نسخ احتياطي</button>
+    <label class="btn btn-secondary" style="padding:7px 10px;font-size:11px;cursor:pointer;margin:0;">
+      📂 استيراد
+      <input type="file" accept=".json" onchange="importBackup(event)" style="display:none;">
+    </label>
+    <button class="btn btn-secondary" onclick="exportExcel()" style="padding:7px 10px;font-size:11px;">⬇ CSV</button>
+  </div>
 </div>
 
 <div class="tabs">
@@ -797,7 +868,63 @@
 
 <div class="toast" id="toast"></div>
 
+</div><!-- end appContent -->
+
 <script>
+// ============ AUTH ============
+// غيّر هذه الأرقام السرية
+const PINS = {
+  '1234': 'admin',   // رقم المدير — غيّره
+  '5678': 'readonly' // رقم الشريك — غيّره
+};
+
+let currentRole = null; // 'admin' or 'readonly'
+
+function doLogin() {
+  const pin = document.getElementById('loginPin').value.trim();
+  const role = PINS[pin];
+  if (!role) {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('loginPin').value = '';
+    return;
+  }
+  currentRole = role;
+  sessionStorage.setItem('role', role);
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('appContent').style.display = 'block';
+  if (role === 'readonly') applyReadonlyMode();
+  renderList();
+}
+
+function applyReadonlyMode() {
+  // إخفاء تبويب الإضافة والمصاريف
+  document.querySelectorAll('.tab')[0].style.display = 'none'; // حجز جديد
+  document.querySelectorAll('.tab')[2].style.display = 'none'; // مصاريف
+  // إخفاء أزرار النسخ الاحتياطي والتصدير
+  document.querySelector('[onclick="exportBackup()"]').style.display = 'none';
+  document.querySelector('[onclick="exportExcel()"]').style.display = 'none';
+  // إظهار شارة القراءة فقط في الهيدر
+  const badge = document.createElement('div');
+  badge.style.cssText = 'font-size:11px;color:#92400e;background:#fef9c3;padding:3px 8px;border-radius:10px;';
+  badge.textContent = '👁 عرض فقط';
+  document.querySelector('.header-sub').after(badge);
+  // الانتقال لتبويب الحجوزات
+  switchTab('list');
+  document.querySelectorAll('.tab')[1].classList.add('active');
+  document.querySelectorAll('.tab')[0].classList.remove('active');
+}
+
+// تحقق من جلسة موجودة
+(function checkSession() {
+  const savedRole = sessionStorage.getItem('role');
+  if (savedRole && PINS[Object.keys(PINS).find(k => PINS[k] === savedRole)]) {
+    currentRole = savedRole;
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+    if (savedRole === 'readonly') setTimeout(applyReadonlyMode, 100);
+  }
+})();
+
 // ============ DATA STORE ============
 let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
 let expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
@@ -1139,8 +1266,8 @@ function renderList() {
         </div>
         <div class="booking-actions">
           ${(b.platform === 'B' || b.platform === 'A') ? `<button class="btn btn-secondary btn-sm" onclick="toggleLiquidity(${b.id})">${b.liquidity === 'received' ? '⏳ نقل لمحفظة' : '✅ تم الاستلام'}</button>` : ''}
-          <button class="btn btn-secondary btn-sm" onclick="editBooking(${b.id})">✏️ تعديل</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteBooking(${b.id})">🗑 حذف</button>
+          ${currentRole === 'admin' ? `<button class="btn btn-secondary btn-sm" onclick="editBooking(${b.id})">✏️ تعديل</button>` : ''}
+          ${currentRole === 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteBooking(${b.id})">🗑 حذف</button>` : ''}
         </div>
       </div>`;
   });
@@ -1766,6 +1893,52 @@ function exportExpensesOnly() {
   });
 
   downloadCSV(csv, `مصاريف_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportBackup() {
+  const data = {
+    version: 1,
+    exportDate: new Date().toISOString(),
+    bookings: JSON.parse(localStorage.getItem('bookings') || '[]'),
+    expenses: JSON.parse(localStorage.getItem('expenses') || '[]'),
+    openingBalance: JSON.parse(localStorage.getItem('openingBalance') || 'null'),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const filename = `backup_${new Date().toISOString().slice(0,10)}.json`;
+  if (navigator.share && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+    const file = new File([blob], filename, { type: 'application/json' });
+    navigator.share({ files: [file], title: filename }).catch(() => fallbackDownload(blob, filename));
+  } else {
+    fallbackDownload(blob, filename);
+  }
+  showToast('✅ تم تصدير النسخة الاحتياطية');
+}
+
+function importBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.version || !data.bookings) {
+        showToast('❌ الملف غير صحيح', true);
+        return;
+      }
+      if (!confirm(`استيراد ${data.bookings.length} حجز و${data.expenses?.length || 0} مصروف من تاريخ ${data.exportDate?.slice(0,10)}؟\nسيتم استبدال البيانات الحالية.`)) return;
+      localStorage.setItem('bookings', JSON.stringify(data.bookings));
+      localStorage.setItem('expenses', JSON.stringify(data.expenses || []));
+      if (data.openingBalance) localStorage.setItem('openingBalance', JSON.stringify(data.openingBalance));
+      bookings = data.bookings;
+      expenses = data.expenses || [];
+      showToast(`✅ تم الاستيراد — ${data.bookings.length} حجز`);
+      renderList();
+    } catch(err) {
+      showToast('❌ خطأ في قراءة الملف', true);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
 }
 
 function exportExcel() {
