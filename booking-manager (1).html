@@ -494,7 +494,14 @@
     <div class="header-title">🏠 إدارة الحجوزات</div>
     <div class="header-sub">٥ شقق · بوكينج · قاذران · إيربنب</div>
   </div>
-  <button class="btn btn-secondary" onclick="exportExcel()" style="padding:7px 12px;font-size:12px;">⬇ تصدير</button>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <button class="btn btn-secondary" onclick="exportBackup()" style="padding:7px 10px;font-size:11px;">💾 نسخ احتياطي</button>
+    <label class="btn btn-secondary" style="padding:7px 10px;font-size:11px;cursor:pointer;margin:0;">
+      📂 استيراد
+      <input type="file" accept=".json" onchange="importBackup(event)" style="display:none;">
+    </label>
+    <button class="btn btn-secondary" onclick="exportExcel()" style="padding:7px 10px;font-size:11px;">⬇ CSV</button>
+  </div>
 </div>
 
 <div class="tabs">
@@ -779,6 +786,12 @@
   <div class="card" id="distribution-card" style="display:none;">
     <div class="card-title">💰 التوزيع على الشركاء</div>
     <div id="distribution-content"></div>
+  </div>
+
+  <!-- فاتورة عمولات بوكينج -->
+  <div class="card" id="booking-commission-card" style="margin-bottom:10px;">
+    <div class="card-title">📱 عمولات بوكينج المستحقة</div>
+    <div id="booking-commission-content"></div>
   </div>
 
   <!-- التقرير التفصيلي القديم (مخفي) -->
@@ -1382,18 +1395,25 @@ function addToAccrued(map, year, month, amount) {
   map[key] = (map[key] || 0) + amount;
 }
 
-// نسخة مفلترة — تأخذ قائمة مصاريف مفلترة مسبقاً
-function getAccruedExpensesForAptFiltered(apt, filteredExp) {
+// نسخة مفلترة — تأخذ كل المصاريف وتعيد نصيب الشهر/السنة المحددة فقط
+function getAccruedExpensesForAptFiltered(apt, filteredExp, targetMonth, targetYear) {
   const accruedMap = {};
-  filteredExp.filter(e => e.apt === apt).forEach(e => {
+  // نستخدم كل المصاريف إذا لم تُمرر مصاريف مفلترة
+  const expList = filteredExp.filter(e => e.apt === apt);
+  expList.forEach(e => {
+    // المصاريف الثابتة (غير موزعة) — تُحسب في شهر إدخالها فقط
     const fixedAmount = (e.net||0)+(e.elec||0)+(e.misc||0)+(e.comm||0)+(e.maint||0)+(e.other||[]).reduce((s,o)=>s+(o.amount||0),0);
     addToAccrued(accruedMap, e.year, e.month, fixedAmount);
+
+    // الإيجار — يوزع على الشهور
     const rentMonths = e.rentMonths || 1;
     const rentShare = (e.rent||0) / rentMonths;
     for (let i = 0; i < rentMonths; i++) {
       const {y, m} = addMonths(e.year, e.month, i);
       addToAccrued(accruedMap, y, m, rentShare);
     }
+
+    // النظافة — يوزع على الشهور
     const cleanMonths = e.cleanMonths || 1;
     const cleanShare = (e.clean||0) / cleanMonths;
     for (let i = 0; i < cleanMonths; i++) {
@@ -1401,6 +1421,12 @@ function getAccruedExpensesForAptFiltered(apt, filteredExp) {
       addToAccrued(accruedMap, y, m, cleanShare);
     }
   });
+
+  // إذا طُلب شهر/سنة محددة، نعيد نصيب ذلك الشهر فقط
+  if (targetMonth && targetYear) {
+    const key = `${targetYear}-${targetMonth}`;
+    return { [key]: accruedMap[key] || 0 };
+  }
   return accruedMap;
 }
 function addMonths(year, month, offset) {
@@ -1434,9 +1460,12 @@ function renderStats() {
   const filteredBookings = bookings.filter(b =>
     (!selMonth || b.month === selMonth) && (!selYear || b.year === selYear)
   );
+  // للمصاريف العادية: نفلترها بالشهر
   const filteredExpenses = expenses.filter(e =>
     (!selMonth || e.month === selMonth) && (!selYear || e.year === selYear)
   );
+  // للـ Accrual: نستخدم كل المصاريف ونستخرج نصيب الشهر المحدد
+  const allExpensesForAccrual = expenses;
 
   // ======= حساب الكاش والسيولة =======
   const ob = JSON.parse(localStorage.getItem('openingBalance') || 'null');
@@ -1458,8 +1487,13 @@ function renderStats() {
   const airbnbAutoTransfer = airbnbWalletTotal >= airbnbThreshold ? airbnbWalletTotal : 0;
   const airbnbRemaining = airbnbWalletTotal >= airbnbThreshold ? 0 : airbnbWalletTotal;
 
+  // المصاريف الفعلية المدفوعة من البنك (كل المصاريف المسجّلة حتى الآن)
+  const totalCashExpensesPaid = expenses.filter(e =>
+    isOpeningPeriod ? (e.year === 2026 && (e.month === 7 || e.month === 8)) : true
+  ).reduce((s, e) => s + e.total, 0);
+
   // الكاش الفعلي في البنك
-  const bankCash = obBank + cashRevenue + airbnbAutoTransfer;
+  const bankCash = obBank + cashRevenue + airbnbAutoTransfer - totalCashExpensesPaid;
 
   // إجمالي السيولة = بنك + بوكينج + إيربنب المتبقي
   const bookingWalletTotal = obBooking + bookingWallet;
@@ -1471,7 +1505,7 @@ function renderStats() {
 
   if (statsMode === 'detailed') {
     // التقرير التفصيلي القديم
-    renderDetailedStats(apts, filteredBookings, filteredExpenses, ob, isOpeningPeriod, obTotal, periodLabel);
+    renderDetailedStats(apts, filteredBookings, filteredExpenses, ob, isOpeningPeriod, obTotal, periodLabel, selMonth, selYear);
     document.getElementById('liquidity-card').style.display = 'none';
     document.getElementById('obligations-card').style.display = 'none';
     document.getElementById('distribution-card').style.display = 'none';
@@ -1523,7 +1557,7 @@ function renderStats() {
     const aptB = filteredBookings.filter(b => b.apt === apt);
     if (!aptB.length && !filteredExpenses.find(e => e.apt === apt)) return;
     const rev = aptB.reduce((s, b) => s + b.price, 0);
-    const accruedMap = getAccruedExpensesForAptFiltered(apt, filteredExpenses);
+    const accruedMap = getAccruedExpensesForAptFiltered(apt, expenses, selMonth, selYear);
     const exp = sumAccrued(accruedMap);
     const profit = rev - exp;
     totalRev += rev; totalExp += exp; totalProfit += profit;
@@ -1547,21 +1581,78 @@ function renderStats() {
     </tr>`;
   document.getElementById('accrual-note').textContent = 'المصاريف تشمل نصيب الشهر من الإيجارات الموزعة (Accrual)';
 
-  // ======= الالتزامات القادمة =======
-  const RENT_SCHEDULE = [
-    { apt: 'M6', nextDue: 'ديسمبر 2026', amount: '~12,000', urgency: 'low' },
-    { apt: '103', nextDue: 'يناير 2027', amount: '~15,000', urgency: 'low' },
-    { apt: '105', nextDue: 'أكتوبر 2026', amount: '8,250', urgency: 'medium' },
-    { apt: '110', nextDue: 'أكتوبر 2026', amount: '6,250', urgency: 'medium' },
-    { apt: '207', nextDue: 'أغسطس 2026', amount: '15,500', urgency: 'high' },
-  ].sort((a, b) => a.urgency === 'high' ? -1 : b.urgency === 'high' ? 1 : 0);
+  // ======= الالتزامات القادمة (ديناميكية من بيانات العقود) =======
+  const CONTRACTS = [
+    { apt: 'M6',  start: '2025-12-01', end: '2026-11-30', annual: 23000 },
+    { apt: '103', start: '2026-06-20', end: '2027-06-19', annual: 30000 },
+    { apt: '105', start: '2025-10-06', end: '2026-10-05', annual: 33000 },
+    { apt: '110', start: '2026-04-06', end: '2027-04-05', annual: 25000 },
+    { apt: '207', start: '2026-07-20', end: '2027-01-19', annual: 30500 },
+  ];
 
-  const urgencyColor = { high: 'var(--red)', medium: 'var(--accent)', low: 'var(--text2)' };
-  document.getElementById('obligations-list').innerHTML = RENT_SCHEDULE.map(r => `
-    <div class="highlight-row">
-      <span class="hl-label">إيجار ${r.apt} <span style="font-size:10px;color:var(--text2)">${r.nextDue}</span></span>
-      <span class="hl-value" style="color:${urgencyColor[r.urgency]}">${r.amount} ر</span>
-    </div>`).join('');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  function addMonthsToDate(d, n) {
+    const r = new Date(d);
+    r.setMonth(r.getMonth() + n);
+    return r;
+  }
+  function daysDiff(d) {
+    return Math.round((d - today) / 86400000);
+  }
+  function fmtDate(d) {
+    return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+  }
+  function urgencyColor(days) {
+    if (days <= 30) return 'var(--red)';
+    if (days <= 60) return 'var(--accent)';
+    return 'var(--text2)';
+  }
+
+  let obligationsHtml = '';
+  const upcoming = [];
+
+  CONTRACTS.forEach(c => {
+    const semi = c.annual / 2;
+    const p1 = new Date(c.start);
+    const p2 = addMonthsToDate(p1, 6);
+    const contractEnd = new Date(c.end);
+    const renewalDate = new Date(contractEnd);
+    renewalDate.setDate(renewalDate.getDate() + 1);
+
+    // الدفعة القادمة
+    let nextDue, label;
+    if (p1 > today) {
+      nextDue = p1; label = 'دفعة أولى';
+    } else if (p2 > today) {
+      nextDue = p2; label = 'دفعة ثانية';
+    } else {
+      nextDue = renewalDate; label = 'تجديد العقد';
+    }
+
+    const days = daysDiff(nextDue);
+    upcoming.push({ apt: APT_NAMES[c.apt] || c.apt, label, nextDue, days, semi, contractEnd });
+  });
+
+  // ترتيب حسب الأقرب
+  upcoming.sort((a, b) => a.days - b.days);
+
+  upcoming.forEach(u => {
+    const color = urgencyColor(u.days);
+    const daysLabel = u.days < 0 ? `متأخر ${Math.abs(u.days)} يوم` : u.days === 0 ? 'اليوم!' : `بعد ${u.days} يوم`;
+    obligationsHtml += `
+      <div class="highlight-row" style="align-items:flex-start;">
+        <div>
+          <span style="font-weight:600;color:var(--text);">إيجار ${u.apt}</span>
+          <span style="font-size:10px;color:var(--text2);margin-right:6px;">${u.label} · ${fmtDate(u.nextDue)}</span>
+          <div style="font-size:11px;color:${color};margin-top:2px;">⏰ ${daysLabel} · نهاية العقد ${fmtDate(u.contractEnd)}</div>
+        </div>
+        <span style="font-weight:700;color:${color};white-space:nowrap;">${u.semi.toLocaleString()} ر</span>
+      </div>`;
+  });
+
+  document.getElementById('obligations-list').innerHTML = obligationsHtml;
 
   // ======= التوزيع =======
   const partnerShare = bankCash / 2;
@@ -1575,16 +1666,58 @@ function renderStats() {
       <span class="hl-label">نصيب كل شريك (50%)</span>
       <span class="hl-value accent" style="font-size:16px;">${partnerShare.toFixed(2)} ر</span>
     </div>`;
+
+  // ======= عمولات بوكينج =======
+  const COMMISSION_RATE = 0.1725;
+  const bookingApts = ['6','103','105','110','207'];
+  let commRows = '';
+  let totalBookingRevenue = 0;
+
+  bookingApts.forEach(apt => {
+    const aptBookingB = filteredBookings.filter(b => b.apt === apt && b.platform === 'B');
+    if (!aptBookingB.length) return;
+    const revenue = aptBookingB.reduce((s, b) => s + b.price, 0);
+    const totalComm = revenue * COMMISSION_RATE;
+    const netRevenue = revenue - totalComm;
+    totalBookingRevenue += revenue;
+
+    commRows += `
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-weight:700;color:var(--text);">شقة ${APT_NAMES[apt]}</span>
+          <span style="font-size:11px;color:var(--text2);">${aptBookingB.length} حجز</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+          <span>إيراد بوكينج:</span><span style="color:var(--text);font-weight:600;text-align:left;">${revenue.toFixed(2)} ر</span>
+          <span>العمولة (17.25%):</span><span style="color:var(--red);text-align:left;">-${totalComm.toFixed(2)} ر</span>
+          <span style="font-weight:700;color:var(--text);">صافي بعد العمولة:</span><span style="color:var(--green);font-weight:700;text-align:left;">${netRevenue.toFixed(2)} ر</span>
+        </div>
+      </div>`;
+  });
+
+  if (totalBookingRevenue > 0) {
+    const grandTotalComm = totalBookingRevenue * COMMISSION_RATE;
+    const grandNet = totalBookingRevenue - grandTotalComm;
+    document.getElementById('booking-commission-content').innerHTML = commRows + `
+      <div style="border-top:2px solid var(--border);padding-top:10px;margin-top:4px;">
+        <div class="highlight-row"><span class="hl-label">إجمالي إيرادات بوكينج</span><span class="hl-value accent">${totalBookingRevenue.toFixed(2)} ر</span></div>
+        <div class="highlight-row"><span class="hl-label">إجمالي العمولات المستحقة</span><span class="hl-value negative">${grandTotalComm.toFixed(2)} ر</span></div>
+        <div class="highlight-row"><span class="hl-label" style="font-weight:700;">صافي ما تستلمه</span><span class="hl-value positive" style="font-size:16px;">${grandNet.toFixed(2)} ر</span></div>
+      </div>`;
+    document.getElementById('booking-commission-card').style.display = '';
+  } else {
+    document.getElementById('booking-commission-card').style.display = 'none';
+  }
 }
 
-function renderDetailedStats(apts, filteredBookings, filteredExpenses, ob, isOpeningPeriod, obTotal, periodLabel) {
+function renderDetailedStats(apts, filteredBookings, filteredExpenses, ob, isOpeningPeriod, obTotal, periodLabel, selMonth, selYear) {
   const totalRevenue = filteredBookings.reduce((s, b) => s + b.price, 0);
   const totalCashExpenses = filteredExpenses.reduce((s, e) => s + e.total, 0);
   const inWallet = filteredBookings.filter(b => (b.platform==='B'||b.platform==='A') && b.liquidity==='wallet').reduce((s,b)=>s+b.price,0);
   const receivedRevenue = filteredBookings.filter(b=>b.liquidity==='received').reduce((s,b)=>s+b.price,0);
   const cashLiquidity = obTotal + receivedRevenue - totalCashExpenses;
   let totalAccruedExpenses = 0;
-  apts.forEach(apt => { totalAccruedExpenses += sumAccrued(getAccruedExpensesForAptFiltered(apt, filteredExpenses)); });
+  apts.forEach(apt => { totalAccruedExpenses += sumAccrued(getAccruedExpensesForAptFiltered(apt, expenses, selMonth, selYear)); });
   const accrualProfit = totalRevenue - totalAccruedExpenses;
 
   document.getElementById('stats-cards').innerHTML = `
@@ -1613,7 +1746,7 @@ function renderDetailedStats(apts, filteredBookings, filteredExpenses, ob, isOpe
     if (!aptB.length) return;
     const rev = aptB.reduce((s,b)=>s+b.price,0);
     const cashExp = filteredExpenses.filter(e=>e.apt===apt).reduce((s,e)=>s+e.total,0);
-    const accruedExp = sumAccrued(getAccruedExpensesForAptFiltered(apt, filteredExpenses));
+    const accruedExp = sumAccrued(getAccruedExpensesForAptFiltered(apt, expenses, selMonth, selYear));
     const walletAmt = aptB.filter(b=>(b.platform==='B'||b.platform==='A')&&b.liquidity==='wallet').reduce((s,b)=>s+b.price,0);
     html += `<div class="card">
       <div class="card-title">🏠 شقة ${APT_NAMES[apt]}</div>
@@ -1640,6 +1773,52 @@ function exportExpensesOnly() {
   });
 
   downloadCSV(csv, `مصاريف_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportBackup() {
+  const data = {
+    version: 1,
+    exportDate: new Date().toISOString(),
+    bookings: JSON.parse(localStorage.getItem('bookings') || '[]'),
+    expenses: JSON.parse(localStorage.getItem('expenses') || '[]'),
+    openingBalance: JSON.parse(localStorage.getItem('openingBalance') || 'null'),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const filename = `backup_${new Date().toISOString().slice(0,10)}.json`;
+  if (navigator.share && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+    const file = new File([blob], filename, { type: 'application/json' });
+    navigator.share({ files: [file], title: filename }).catch(() => fallbackDownload(blob, filename));
+  } else {
+    fallbackDownload(blob, filename);
+  }
+  showToast('✅ تم تصدير النسخة الاحتياطية');
+}
+
+function importBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.version || !data.bookings) {
+        showToast('❌ الملف غير صحيح', true);
+        return;
+      }
+      if (!confirm(`استيراد ${data.bookings.length} حجز و${data.expenses?.length || 0} مصروف من تاريخ ${data.exportDate?.slice(0,10)}؟\nسيتم استبدال البيانات الحالية.`)) return;
+      localStorage.setItem('bookings', JSON.stringify(data.bookings));
+      localStorage.setItem('expenses', JSON.stringify(data.expenses || []));
+      if (data.openingBalance) localStorage.setItem('openingBalance', JSON.stringify(data.openingBalance));
+      bookings = data.bookings;
+      expenses = data.expenses || [];
+      showToast(`✅ تم الاستيراد — ${data.bookings.length} حجز`);
+      renderList();
+    } catch(err) {
+      showToast('❌ خطأ في قراءة الملف', true);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
 }
 
 function exportExcel() {
