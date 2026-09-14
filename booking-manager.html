@@ -770,6 +770,36 @@
     <button class="btn btn-secondary btn-full" onclick="exportExpensesOnly()">⬇ تصدير المصاريف (إكسل)</button>
   </div>
 
+  <!-- فلتر المصاريف -->
+  <div class="card" style="margin-bottom:10px;">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <select id="exp-filter-month" style="flex:1;min-width:100px;" onchange="renderExpensesList()">
+        <option value="">كل الأشهر</option>
+        <option value="1">يناير</option><option value="2">فبراير</option>
+        <option value="3">مارس</option><option value="4">أبريل</option>
+        <option value="5">مايو</option><option value="6">يونيو</option>
+        <option value="7">يوليو</option><option value="8">أغسطس</option>
+        <option value="9">سبتمبر</option><option value="10">أكتوبر</option>
+        <option value="11">نوفمبر</option><option value="12">ديسمبر</option>
+      </select>
+      <select id="exp-filter-year" style="flex:1;min-width:80px;" onchange="renderExpensesList()">
+        <option value="">كل السنوات</option>
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026" selected>2026</option>
+      </select>
+      <select id="exp-filter-apt" style="flex:1;min-width:90px;" onchange="renderExpensesList()">
+        <option value="">كل الشقق</option>
+        <option value="6">M6</option>
+        <option value="103">103</option>
+        <option value="105">105</option>
+        <option value="110">110</option>
+        <option value="207">207</option>
+      </select>
+    </div>
+  </div>
+
   <div id="expenses-list"></div>
 </div>
 
@@ -874,8 +904,8 @@
 // ============ AUTH ============
 // غيّر هذه الأرقام السرية
 const PINS = {
-  '1986': 'admin',   // رقم المدير — غيّره
-  '1234': 'readonly' // رقم الشريك — غيّره
+  '1234': 'admin',   // رقم المدير — غيّره
+  '5678': 'readonly' // رقم الشريك — غيّره
 };
 
 let currentRole = null; // 'admin' or 'readonly'
@@ -1405,9 +1435,23 @@ function saveExpenses() {
 }
 
 function renderExpensesList() {
-  const sorted = [...expenses].sort((a, b) => b.year - a.year || b.month - a.month);
+  const filterMonth = parseInt(document.getElementById('exp-filter-month')?.value) || null;
+  const filterYear = parseInt(document.getElementById('exp-filter-year')?.value) || null;
+  const filterApt = document.getElementById('exp-filter-apt')?.value || null;
+
+  const sorted = [...expenses]
+    .filter(e =>
+      (!filterMonth || e.month === filterMonth) &&
+      (!filterYear || e.year === filterYear) &&
+      (!filterApt || e.apt === filterApt)
+    )
+    .sort((a, b) => b.year - a.year || b.month - a.month || a.apt.localeCompare(b.apt));
+
   const container = document.getElementById('expenses-list');
-  if (!sorted.length) { container.innerHTML = ''; return; }
+  if (!sorted.length) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>لا توجد مصاريف للفترة المحددة</p></div>';
+    return;
+  }
 
   let html = '<div class="card"><div class="card-title">📋 المصاريف المسجلة</div>';
   sorted.forEach(e => {
