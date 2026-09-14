@@ -6,6 +6,52 @@
 <title>إدارة الحجوزات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <style>
+  /* ===== LOGIN ===== */
+  .login-overlay {
+    position: fixed; inset: 0;
+    background: #f4f6f9;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+    font-family: 'Tajawal', sans-serif;
+  }
+  .login-card {
+    background: #fff;
+    border: 1px solid #dde1e7;
+    border-radius: 16px;
+    padding: 32px 24px;
+    width: 90%; max-width: 340px;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  .login-icon { font-size: 48px; margin-bottom: 12px; }
+  .login-title { font-size: 20px; font-weight: 800; color: #1a1f2e; margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: #6b7280; margin-bottom: 24px; }
+  .login-input {
+    width: 100%; padding: 12px 16px;
+    border: 1.5px solid #dde1e7; border-radius: 10px;
+    font-family: 'Tajawal', sans-serif; font-size: 16px;
+    text-align: center; letter-spacing: 4px;
+    margin-bottom: 12px; outline: none;
+    background: #f4f6f9; color: #1a1f2e;
+    transition: border-color 0.2s;
+  }
+  .login-input:focus { border-color: #c8860a; }
+  .login-btn {
+    width: 100%; padding: 13px;
+    background: #c8860a; color: #fff;
+    border: none; border-radius: 10px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .login-btn:hover { background: #e6a817; }
+  .login-error { color: #dc2626; font-size: 13px; margin-top: 8px; display: none; }
+  .login-readonly-badge {
+    display: inline-block; margin-top: 12px;
+    background: #fef9c3; color: #92400e;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
   :root {
     --bg: #f4f6f9;
     --surface: #ffffff;
@@ -489,6 +535,24 @@
 </head>
 <body>
 
+<!-- ===== LOGIN OVERLAY ===== -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-icon">🏠</div>
+    <div class="login-title">إدارة الحجوزات</div>
+    <div class="login-sub">أدخل الرقم السري للدخول</div>
+    <input type="password" class="login-input" id="loginPin" placeholder="• • • • •" maxlength="10"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">دخول</button>
+    <div class="login-error" id="loginError">❌ الرقم السري غير صحيح</div>
+    <div id="readonlyBadge" style="display:none">
+      <div class="login-readonly-badge">👁 صلاحية عرض فقط</div>
+    </div>
+  </div>
+</div>
+
+<div id="appContent" style="display:none;">
+
 <div class="header">
   <div>
     <div class="header-title">🏠 إدارة الحجوزات</div>
@@ -706,6 +770,36 @@
     <button class="btn btn-secondary btn-full" onclick="exportExpensesOnly()">⬇ تصدير المصاريف (إكسل)</button>
   </div>
 
+  <!-- فلتر المصاريف -->
+  <div class="card" style="margin-bottom:10px;">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <select id="exp-filter-month" style="flex:1;min-width:100px;" onchange="renderExpensesList()">
+        <option value="">كل الأشهر</option>
+        <option value="1">يناير</option><option value="2">فبراير</option>
+        <option value="3">مارس</option><option value="4">أبريل</option>
+        <option value="5">مايو</option><option value="6">يونيو</option>
+        <option value="7">يوليو</option><option value="8">أغسطس</option>
+        <option value="9">سبتمبر</option><option value="10">أكتوبر</option>
+        <option value="11">نوفمبر</option><option value="12">ديسمبر</option>
+      </select>
+      <select id="exp-filter-year" style="flex:1;min-width:80px;" onchange="renderExpensesList()">
+        <option value="">كل السنوات</option>
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026" selected>2026</option>
+      </select>
+      <select id="exp-filter-apt" style="flex:1;min-width:90px;" onchange="renderExpensesList()">
+        <option value="">كل الشقق</option>
+        <option value="6">M6</option>
+        <option value="103">103</option>
+        <option value="105">105</option>
+        <option value="110">110</option>
+        <option value="207">207</option>
+      </select>
+    </div>
+  </div>
+
   <div id="expenses-list"></div>
 </div>
 
@@ -804,7 +898,63 @@
 
 <div class="toast" id="toast"></div>
 
+</div><!-- end appContent -->
+
 <script>
+// ============ AUTH ============
+// غيّر هذه الأرقام السرية
+const PINS = {
+  '1234': 'admin',   // رقم المدير — غيّره
+  '5678': 'readonly' // رقم الشريك — غيّره
+};
+
+let currentRole = null; // 'admin' or 'readonly'
+
+function doLogin() {
+  const pin = document.getElementById('loginPin').value.trim();
+  const role = PINS[pin];
+  if (!role) {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('loginPin').value = '';
+    return;
+  }
+  currentRole = role;
+  sessionStorage.setItem('role', role);
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('appContent').style.display = 'block';
+  if (role === 'readonly') applyReadonlyMode();
+  renderList();
+}
+
+function applyReadonlyMode() {
+  // إخفاء تبويب الإضافة والمصاريف
+  document.querySelectorAll('.tab')[0].style.display = 'none'; // حجز جديد
+  document.querySelectorAll('.tab')[2].style.display = 'none'; // مصاريف
+  // إخفاء أزرار النسخ الاحتياطي والتصدير
+  document.querySelector('[onclick="exportBackup()"]').style.display = 'none';
+  document.querySelector('[onclick="exportExcel()"]').style.display = 'none';
+  // إظهار شارة القراءة فقط في الهيدر
+  const badge = document.createElement('div');
+  badge.style.cssText = 'font-size:11px;color:#92400e;background:#fef9c3;padding:3px 8px;border-radius:10px;';
+  badge.textContent = '👁 عرض فقط';
+  document.querySelector('.header-sub').after(badge);
+  // الانتقال لتبويب الحجوزات
+  switchTab('list');
+  document.querySelectorAll('.tab')[1].classList.add('active');
+  document.querySelectorAll('.tab')[0].classList.remove('active');
+}
+
+// تحقق من جلسة موجودة
+(function checkSession() {
+  const savedRole = sessionStorage.getItem('role');
+  if (savedRole && PINS[Object.keys(PINS).find(k => PINS[k] === savedRole)]) {
+    currentRole = savedRole;
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+    if (savedRole === 'readonly') setTimeout(applyReadonlyMode, 100);
+  }
+})();
+
 // ============ DATA STORE ============
 let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
 let expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
@@ -1146,8 +1296,8 @@ function renderList() {
         </div>
         <div class="booking-actions">
           ${(b.platform === 'B' || b.platform === 'A') ? `<button class="btn btn-secondary btn-sm" onclick="toggleLiquidity(${b.id})">${b.liquidity === 'received' ? '⏳ نقل لمحفظة' : '✅ تم الاستلام'}</button>` : ''}
-          <button class="btn btn-secondary btn-sm" onclick="editBooking(${b.id})">✏️ تعديل</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteBooking(${b.id})">🗑 حذف</button>
+          ${currentRole === 'admin' ? `<button class="btn btn-secondary btn-sm" onclick="editBooking(${b.id})">✏️ تعديل</button>` : ''}
+          ${currentRole === 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteBooking(${b.id})">🗑 حذف</button>` : ''}
         </div>
       </div>`;
   });
@@ -1285,9 +1435,23 @@ function saveExpenses() {
 }
 
 function renderExpensesList() {
-  const sorted = [...expenses].sort((a, b) => b.year - a.year || b.month - a.month);
+  const filterMonth = parseInt(document.getElementById('exp-filter-month')?.value) || null;
+  const filterYear = parseInt(document.getElementById('exp-filter-year')?.value) || null;
+  const filterApt = document.getElementById('exp-filter-apt')?.value || null;
+
+  const sorted = [...expenses]
+    .filter(e =>
+      (!filterMonth || e.month === filterMonth) &&
+      (!filterYear || e.year === filterYear) &&
+      (!filterApt || e.apt === filterApt)
+    )
+    .sort((a, b) => b.year - a.year || b.month - a.month || a.apt.localeCompare(b.apt));
+
   const container = document.getElementById('expenses-list');
-  if (!sorted.length) { container.innerHTML = ''; return; }
+  if (!sorted.length) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>لا توجد مصاريف للفترة المحددة</p></div>';
+    return;
+  }
 
   let html = '<div class="card"><div class="card-title">📋 المصاريف المسجلة</div>';
   sorted.forEach(e => {
