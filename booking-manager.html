@@ -904,8 +904,8 @@
 // ============ AUTH ============
 // غيّر هذه الأرقام السرية
 const PINS = {
-  '1986': 'admin',   // رقم المدير — غيّره
-  '1234': 'readonly' // رقم الشريك — غيّره
+  '1234': 'admin',   // رقم المدير — غيّره
+  '5678': 'readonly' // رقم الشريك — غيّره
 };
 
 let currentRole = null; // 'admin' or 'readonly'
@@ -1622,16 +1622,34 @@ function renderStats() {
   const periodLabel = selMonth && selYear ? `${MONTHS_AR[selMonth-1]} ${selYear}` : selYear ? `${selYear}` : 'كل الفترات';
 
   const filteredBookings = bookings.filter(b =>
-    (!selMonth || b.month === selMonth) && (!selYear || b.year === selYear)
+    (!selMonth || b.month === selMonth) &&
+    (!selYear || b.year === selYear) &&
+    !b.historical
   );
-  // للمصاريف العادية: نفلترها بالشهر
+  // للمصاريف العادية: نفلترها بالشهر وبدون تاريخية
   const filteredExpenses = expenses.filter(e =>
-    (!selMonth || e.month === selMonth) && (!selYear || e.year === selYear)
+    (!selMonth || e.month === selMonth) &&
+    (!selYear || e.year === selYear) &&
+    !e.historical
   );
-  // للـ Accrual: نستخدم كل المصاريف ونستخرج نصيب الشهر المحدد
-  const allExpensesForAccrual = expenses;
+  // للـ Accrual: نستخدم كل المصاريف غير التاريخية
+  const allExpensesForAccrual = expenses.filter(e => !e.historical);
 
-  // ======= حساب الكاش والسيولة =======
+  // للتقارير التاريخية — نضيف البيانات التاريخية لو الفلتر على فترة قديمة
+  const isHistoricalPeriod = selYear && selYear < 2026 || (selYear === 2026 && selMonth && selMonth < 7);
+  const histBookings = isHistoricalPeriod ? bookings.filter(b =>
+    b.historical &&
+    (!selMonth || b.month === selMonth) &&
+    (!selYear || b.year === selYear)
+  ) : [];
+  const histExpenses = isHistoricalPeriod ? expenses.filter(e =>
+    e.historical &&
+    (!selMonth || e.month === selMonth) &&
+    (!selYear || e.year === selYear)
+  ) : [];
+
+  const allBookings = [...filteredBookings, ...histBookings];
+  const allExpensesFiltered = [...filteredExpenses, ...histExpenses];
   const ob = JSON.parse(localStorage.getItem('openingBalance') || 'null');
   const isOpeningPeriod = ob && ((selMonth === 7 && selYear === 2026) || (!selMonth && !selYear));
   const obBank = isOpeningPeriod ? ob.bank : 0;
@@ -1718,11 +1736,13 @@ function renderStats() {
   let rows = '';
 
   apts.forEach(apt => {
-    const aptB = filteredBookings.filter(b => b.apt === apt);
-    if (!aptB.length && !filteredExpenses.find(e => e.apt === apt)) return;
+    const aptB = allBookings.filter(b => b.apt === apt);
+    if (!aptB.length && !allExpensesFiltered.find(e => e.apt === apt)) return;
     const rev = aptB.reduce((s, b) => s + b.price, 0);
-    const accruedMap = getAccruedExpensesForAptFiltered(apt, expenses, selMonth, selYear);
-    const exp = sumAccrued(accruedMap);
+    const accruedMap = getAccruedExpensesForAptFiltered(apt, expenses.filter(e => !e.historical), selMonth, selYear);
+    const exp = isHistoricalPeriod
+      ? allExpensesFiltered.filter(e => e.apt === apt).reduce((s, e) => s + e.total, 0)
+      : sumAccrued(accruedMap);
     const profit = rev - exp;
     totalRev += rev; totalExp += exp; totalProfit += profit;
     const color = profit >= 0 ? 'var(--green)' : 'var(--red)';
