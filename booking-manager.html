@@ -1026,7 +1026,7 @@ let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
 let expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
 
 // الشقق الافتراضية — تُحمل من localStorage إذا وجدت
-const DEFAULT_APTS = { '6': 'M6', '103': '103', '105': '105', '110': '110', '207': '207' };
+const DEFAULT_APTS = { '6': 'M6', '103': '103', '105': '105', '110': '110', '207': '207', '242': '242' };
 let APT_NAMES = JSON.parse(localStorage.getItem('aptNames') || JSON.stringify(DEFAULT_APTS));
 
 function saveApts() {
@@ -1209,7 +1209,7 @@ function parseVoiceInput(text) {
   if (nameMatch) document.getElementById('f-name').value = nameMatch[1].trim();
 
   // Extract apartment
-  const aptMap = { 'مية وخمسة|105': '105', 'مية وعشرة|110|١١٠': '110', 'مية وسبعة|207|٢٠٧': '207', 'مية وثلاثة|103|١٠٣': '103', 'ستة|m6': '6' };
+  const aptMap = { 'مية وخمسة|105': '105', 'مية وعشرة|110|١١٠': '110', 'مية وسبعة|207|٢٠٧': '207', 'مية وثلاثة|103|١٠٣': '103', 'ستة|m6': '6', 'مئتان واثنان وأربعون|242|٢٤٢': '242' };
   for (const [pattern, val] of Object.entries(aptMap)) {
     if (new RegExp(pattern).test(t)) {
       document.getElementById('f-apt').value = val;
@@ -1690,7 +1690,7 @@ function clearStatsFilter() {
 }
 
 function renderStats() {
-  const apts = ['6','103','105','110','207'];
+  const apts = ['6','103','105','110','207','242'];
   const selMonth = parseInt(document.getElementById('stats-month').value) || null;
   const selYear = parseInt(document.getElementById('stats-year').value) || null;
   const periodLabel = selMonth && selYear ? `${MONTHS_AR[selMonth-1]} ${selYear}` : selYear ? `${selYear}` : 'كل الفترات';
@@ -1846,6 +1846,7 @@ function renderStats() {
     { apt: '105', start: '2025-10-06', end: '2026-10-05', annual: 33000 },
     { apt: '110', start: '2026-04-06', end: '2027-04-05', annual: 25000 },
     { apt: '207', start: '2026-07-20', end: '2027-01-19', annual: 30500 },
+    { apt: '242', start: '2026-10-01', end: '2027-09-30', annual: 26000 },
   ];
 
   const today = new Date();
@@ -1927,7 +1928,7 @@ function renderStats() {
 
   // ======= عمولات بوكينج =======
   const COMMISSION_RATE = 0.1725;
-  const bookingApts = ['6','103','105','110','207'];
+  const bookingApts = ['6','103','105','110','207','242'];
   let commRows = '';
   let totalBookingRevenue = 0;
 
